@@ -1,0 +1,48 @@
+apply plugin: 'groovy'
+apply plugin: 'maven-publish'
+
+def publishName = 'make'
+def url = 'https://github.com/awrichar/gradle-external-build'
+group = 'co.arichardson.gradle'
+version = '1.0'
+
+dependencies {
+    compile localGroovy()
+    compile gradleApi()
+}
+
+ext {
+    if (!project.hasProperty('publishUrl')) publishUrl = null
+    if (!project.hasProperty('publishUser')) publishUser = null
+    if (!project.hasProperty('publishPassword')) publishPassword = null
+}
+
+targetCompatibility = '1.6'
+
+publishing {
+    repositories {
+        maven {
+            url = publishUrl
+            credentials {
+                username publishUser
+                password publishPassword
+            }
+        }
+    }
+
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            artifactId = publishName
+            pom.withXml {
+                asNode().appendNode('url', url)
+            }
+        }
+    }
+}
+
+gradle.taskGraph.whenReady { graph ->
+    if (graph.hasTask(':publish') && !publishUrl) {
+        throw new GradleException('To publish, you must pass in -PpublishUrl (and optionally publishUser/publishPassword).')
+    }
+}
