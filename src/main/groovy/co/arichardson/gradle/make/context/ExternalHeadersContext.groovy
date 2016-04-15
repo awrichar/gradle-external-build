@@ -1,12 +1,10 @@
 package co.arichardson.gradle.make.context
 
 class ExternalHeadersContext extends NativeBinaryContext {
-    final File outputDir
     private final List<Object> source = []
 
-    ExternalHeadersContext(BuildTaskContext parent) {
+    ExternalHeadersContext(NativeBinaryContext parent) {
         super(parent)
-        outputDir = parent.outputDir
     }
 
     List<Object> getSrcDirs() {

@@ -1,7 +1,6 @@
 package co.arichardson.gradle.make
 
 import co.arichardson.gradle.make.context.BuildTaskContext
-import co.arichardson.gradle.make.context.ExternalHeadersContext
 import co.arichardson.gradle.make.context.ExternalOutputsContext
 import co.arichardson.gradle.make.internal.DefaultExternalNativeLibrarySpec
 import co.arichardson.gradle.make.tasks.OutputRedirectingExec
