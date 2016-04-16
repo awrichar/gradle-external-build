@@ -4,26 +4,26 @@ import co.arichardson.gradle.make.ExternalNativeLibrarySpec
 import org.gradle.nativeplatform.internal.DefaultNativeLibrarySpec
 
 class DefaultExternalNativeLibrarySpec extends DefaultNativeLibrarySpec implements ExternalNativeLibrarySpec {
-    private Closure<Void> configureBuildAction
-    private Closure<File> externalOutputsAction
+    private Closure<Void> buildInputAction
+    private Closure<Void> buildOutputAction
 
     @Override
-    Closure<Void> getConfigureBuild() {
-        return configureBuildAction
+    Closure<Void> getBuildInput() {
+        return buildInputAction
     }
 
     @Override
-    void configureBuild(Closure<Void> action) {
-        configureBuildAction = action
+    void buildInput(Closure<Void> action) {
+        buildInputAction = action
     }
 
     @Override
-    Closure<Void> getExternalOutputs() {
-        return externalOutputsAction
+    Closure<Void> getBuildOutput() {
+        return buildOutputAction
     }
 
     @Override
-    void externalOutputs(Closure<Void> action) {
-        externalOutputsAction = action
+    void buildOutput(Closure<Void> action) {
+        buildOutputAction = action
     }
 }

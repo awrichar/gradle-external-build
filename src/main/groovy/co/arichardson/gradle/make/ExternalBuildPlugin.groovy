@@ -32,9 +32,9 @@ class ExternalBuildPlugin extends RuleSource {
     void configureExternalLibraries(ModelMap<ExternalNativeLibrarySpec> libraries) {
         libraries.all { library ->
             library.binaries.withType(NativeBinarySpec) { binary ->
-                // Evaluate the "externalOutputs" block
+                // Evaluate the "buildOutput" block
                 ExternalOutputsContext outputsContext = new ExternalOutputsContext(binary)
-                Utils.invokeWithContext(library.externalOutputs, outputsContext)
+                Utils.invokeWithContext(library.buildOutput, outputsContext)
 
                 // Create the source set to include exported headers
                 binary.sources.create(EXTERNAL_SOURCE, CppSourceSet) {
@@ -70,9 +70,9 @@ class ExternalBuildPlugin extends RuleSource {
         binaries.findAll { it.component in ExternalNativeLibrarySpec } .each { NativeBinarySpec binary ->
             ExternalNativeLibrarySpec library = binary.component as ExternalNativeLibrarySpec
 
-            // Create the task configuration
+            // Create the task configuration from the "buildInput" block
             BuildTaskContext taskContext = new BuildTaskContext(binary)
-            Utils.invokeWithContext(library.configureBuild, taskContext)
+            Utils.invokeWithContext(library.buildInput, taskContext)
 
             // Create the task (or reuse one if an exact duplicate exists)
             OutputRedirectingExec buildTask = buildTasks.find { it.key == taskContext } ?.value
