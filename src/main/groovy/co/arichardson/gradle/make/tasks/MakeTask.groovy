@@ -16,5 +16,11 @@ class MakeTask extends OutputRedirectingExec {
 
         super.exec()
     }
-}
 
+    @Override
+    boolean equals(Object other) {
+        other in MakeTask &&
+            makefile == other.makefile &&
+            super.equals(other)
+    }
+}

@@ -65,29 +65,26 @@ class ExternalBuildPlugin extends RuleSource {
 
     @Mutate
     void createExternalLibraryTasks(ModelMap<Task> tasks, @Path('binaries') ModelMap<NativeBinarySpec> binaries) {
-        Map<BuildTaskContext, OutputRedirectingExec> buildTasks = [:]
+        List<Task> buildTasks = []
 
         binaries.findAll { it.component in ExternalNativeLibrarySpec } .each { NativeBinarySpec binary ->
             ExternalNativeLibrarySpec library = binary.component as ExternalNativeLibrarySpec
 
-            // Create the task configuration from the "buildInput" block
-            BuildTaskContext taskContext = new BuildTaskContext(binary)
+            // Create a task for the external build
+            String taskName = binary.tasks.taskName(EXTERNAL_BUILD_TASK)
+            tasks.create(taskName, library.buildTaskType)
+            Task buildTask = tasks.get(taskName) as OutputRedirectingExec
+
+            // Configure the task with the "buildInput" block
+            BuildTaskContext taskContext = new BuildTaskContext(binary, buildTask)
             Utils.invokeWithContext(library.buildInput, taskContext)
 
-            // Create the task (or reuse one if an exact duplicate exists)
-            OutputRedirectingExec buildTask = buildTasks.find { it.key == taskContext } ?.value
-            if (!buildTask) {
-                String taskName = binary.tasks.taskName(EXTERNAL_BUILD_TASK)
-
-                binary.tasks.create(taskName, OutputRedirectingExec) {
-                    it.executable = taskContext.executable
-                    it.args = taskContext.args
-                    it.environment = taskContext.environment
-                    it.redirectOutput = true
-                    buildTask = it
-                }
-
-                buildTasks[taskContext] = buildTask
+            // Reuse an existing task if a duplicate exists
+            Task existingTask = buildTasks.find { it.equals(buildTask) }
+            if (existingTask) {
+                buildTask = existingTask
+            } else {
+                buildTasks << buildTask
             }
 
             buildTask.dependsOn(binary.libs*.linkFiles)

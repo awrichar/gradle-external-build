@@ -4,7 +4,7 @@ import org.gradle.api.tasks.Exec
 import org.gradle.process.internal.ExecException
 
 class OutputRedirectingExec extends Exec {
-    boolean redirectOutput = false
+    boolean redirectOutput = true
 
     final File logFile
     final File errorFile
@@ -31,5 +31,13 @@ class OutputRedirectingExec extends Exec {
         } else {
             super.exec()
         }
+    }
+
+    @Override
+    boolean equals(Object other) {
+        return other in OutputRedirectingExec &&
+            executable == other.executable &&
+            args == other.args &&
+            environment == other.environment
     }
 }
