@@ -2,7 +2,7 @@ package co.arichardson.gradle.make.tasks
 
 import org.gradle.process.internal.ExecAction
 
-class QMakeTask extends MakeTask {
+class QMake extends GnuMake {
     String qmakeExecutable = 'qmake'
     List<String> qmakeArgs = []
 
@@ -20,7 +20,7 @@ class QMakeTask extends MakeTask {
 
     @Override
     boolean equals(Object other) {
-        other in QMakeTask &&
+        other in QMake &&
             qmakeExecutable == other.qmakeExecutable &&
             qmakeArgs == other.qmakeArgs &&
             super.equals(other)

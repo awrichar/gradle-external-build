@@ -1,9 +1,9 @@
 package co.arichardson.gradle.make.tasks
 
-class MakeTask extends OutputRedirectingExec {
+class GnuMake extends OutputRedirectingExec {
     File makefile
 
-    public MakeTask() {
+    public GnuMake() {
         executable 'make'
         args '-j', project.gradle.startParameter.maxWorkerCount
     }
@@ -19,7 +19,7 @@ class MakeTask extends OutputRedirectingExec {
 
     @Override
     boolean equals(Object other) {
-        other in MakeTask &&
+        other in GnuMake &&
             makefile == other.makefile &&
             super.equals(other)
     }
