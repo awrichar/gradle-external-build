@@ -8,6 +8,7 @@ import org.gradle.api.Task
 import org.gradle.api.file.CopySpec
 import org.gradle.api.internal.ClosureBackedAction
 import org.gradle.api.internal.file.FileOperations
+import org.gradle.api.tasks.StopExecutionException
 import org.gradle.language.cpp.CppSourceSet
 import org.gradle.language.nativeplatform.tasks.AbstractNativeCompileTask
 import org.gradle.model.ModelMap
@@ -57,6 +58,8 @@ class ExternalBuildPlugin extends RuleSource {
                             it.into mainTask.outputFile.parentFile
                             it.rename { mainTask.outputFile.name }
                         }))
+
+                        throw new StopExecutionException()
                     }
                 }
             }
