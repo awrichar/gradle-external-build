@@ -1,7 +1,7 @@
 package co.arichardson.gradle.make
 
-import co.arichardson.gradle.make.context.BuildTaskContext
-import co.arichardson.gradle.make.context.ExternalOutputsContext
+import co.arichardson.gradle.make.context.BuildConfigContext
+import co.arichardson.gradle.make.context.BuildOutputContext
 import co.arichardson.gradle.make.internal.DefaultExternalNativeLibrarySpec
 import co.arichardson.gradle.make.tasks.OutputRedirectingExec
 import org.gradle.api.Task
@@ -33,12 +33,12 @@ class ExternalBuildPlugin extends RuleSource {
         libraries.all { library ->
             library.binaries.withType(NativeBinarySpec) { binary ->
                 // Evaluate the "buildOutput" block
-                ExternalOutputsContext outputsContext = new ExternalOutputsContext(binary)
-                Utils.invokeWithContext(library.buildOutput, outputsContext)
+                BuildOutputContext outputContext = new BuildOutputContext(binary)
+                Utils.invokeWithContext(library.buildOutput, outputContext)
 
                 // Create the source set to include exported headers
                 binary.sources.create(EXTERNAL_SOURCE, CppSourceSet) {
-                    it.exportedHeaders.srcDirs = outputsContext.headersContext.srcDirs
+                    it.exportedHeaders.srcDirs = outputContext.headersContext.srcDirs
                 }
 
                 // Disable all normal compile tasks
@@ -50,10 +50,10 @@ class ExternalBuildPlugin extends RuleSource {
                 binary.tasks.withType(ObjectFilesToBinary) { mainTask ->
                     FileOperations ops = mainTask.services.get(FileOperations)
 
-                    mainTask.inputs.file outputsContext.outputFile
+                    mainTask.inputs.file outputContext.outputFile
                     mainTask.doFirst {
                         ops.copy(new ClosureBackedAction<CopySpec>({
-                            it.from outputsContext.outputFile
+                            it.from outputContext.outputFile
                             it.into mainTask.outputFile.parentFile
                             it.rename { mainTask.outputFile.name }
                         }))
@@ -75,9 +75,9 @@ class ExternalBuildPlugin extends RuleSource {
             tasks.create(taskName, library.buildTaskType)
             Task buildTask = tasks.get(taskName) as OutputRedirectingExec
 
-            // Configure the task with the "buildInput" block
-            BuildTaskContext taskContext = new BuildTaskContext(binary, buildTask)
-            Utils.invokeWithContext(library.buildInput, taskContext)
+            // Configure the task with the "buildConfig" block
+            BuildConfigContext inputContext = new BuildConfigContext(binary, buildTask)
+            Utils.invokeWithContext(library.buildConfig, inputContext)
 
             // Reuse an existing task if a duplicate exists
             Task existingTask = buildTasks.find { it.equals(buildTask) }

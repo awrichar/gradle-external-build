@@ -3,11 +3,11 @@ package co.arichardson.gradle.make.context
 import co.arichardson.gradle.make.Utils
 import org.gradle.nativeplatform.NativeBinarySpec
 
-class ExternalOutputsContext extends NativeBinaryContext {
+class BuildOutputContext extends NativeBinaryContext {
     final ExternalHeadersContext headersContext
     File outputFile
 
-    ExternalOutputsContext(NativeBinarySpec parent) {
+    BuildOutputContext(NativeBinarySpec parent) {
         super(parent)
         headersContext = new ExternalHeadersContext(parent)
     }

@@ -3,11 +3,11 @@ package co.arichardson.gradle.make.context
 import org.gradle.api.Task
 import org.gradle.nativeplatform.NativeBinarySpec
 
-class BuildTaskContext extends NativeBinaryContext {
+class BuildConfigContext extends NativeBinaryContext {
     final List<File> linkedLibraries
     final Task buildTask
 
-    BuildTaskContext(NativeBinarySpec binary, Task task) {
+    BuildConfigContext(NativeBinarySpec binary, Task task) {
         super(binary)
 
         linkedLibraries = []
@@ -20,7 +20,7 @@ class BuildTaskContext extends NativeBinaryContext {
 
     @Override
     boolean equals(Object other) {
-        other in BuildTaskContext && buildTask == other.buildTask
+        other in BuildConfigContext && buildTask == other.buildTask
     }
 
     Object methodMissing(String name, args) {

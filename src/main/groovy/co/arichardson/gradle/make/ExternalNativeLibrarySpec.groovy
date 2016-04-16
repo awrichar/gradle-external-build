@@ -4,9 +4,9 @@ import org.gradle.api.Task
 import org.gradle.nativeplatform.NativeLibrarySpec
 
 interface ExternalNativeLibrarySpec extends NativeLibrarySpec {
-    Closure<Void> getBuildInput()
-    void buildInput(Closure<Void> action)
-    void buildInput(Class<Task> actionType, Closure<Void> action)
+    Closure<Void> getBuildConfig()
+    void buildConfig(Closure<Void> action)
+    void buildConfig(Class<Task> actionType, Closure<Void> action)
 
     Class<Task> getBuildTaskType()
 

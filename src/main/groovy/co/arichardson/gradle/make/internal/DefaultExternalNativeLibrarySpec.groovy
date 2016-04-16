@@ -7,23 +7,23 @@ import org.gradle.nativeplatform.internal.DefaultNativeLibrarySpec
 
 class DefaultExternalNativeLibrarySpec extends DefaultNativeLibrarySpec implements ExternalNativeLibrarySpec {
     private Class<Task> buildTaskType = OutputRedirectingExec
-    private Closure<Void> buildInputAction = {}
+    private Closure<Void> buildConfigAction = {}
     private Closure<Void> buildOutputAction = {}
 
     @Override
-    Closure<Void> getBuildInput() {
-        return buildInputAction
+    Closure<Void> getBuildConfig() {
+        return buildConfigAction
     }
 
     @Override
-    void buildInput(Closure<Void> action) {
-        buildInputAction = action
+    void buildConfig(Closure<Void> action) {
+        buildConfigAction = action
     }
 
     @Override
-    void buildInput(Class<Task> actionType, Closure<Void> action) {
+    void buildConfig(Class<Task> actionType, Closure<Void> action) {
         buildTaskType = actionType
-        buildInputAction = action
+        buildConfigAction = action
     }
 
     @Override
