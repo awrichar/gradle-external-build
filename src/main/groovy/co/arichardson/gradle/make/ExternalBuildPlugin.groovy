@@ -20,44 +20,24 @@ import org.gradle.platform.base.ComponentType
 import org.gradle.platform.base.TypeBuilder
 
 class ExternalBuildPlugin extends RuleSource {
+    public static final String EXTERNAL_SOURCE = 'externalSource'
+    public static final String EXTERNAL_BUILD_TASK = 'externalBuild'
+
     @ComponentType
     void registerExternalLibraryType(TypeBuilder<ExternalNativeLibrarySpec> builder) {
         builder.defaultImplementation(DefaultExternalNativeLibrarySpec)
     }
 
     @Mutate
-    void createExternalLibraryTasks(ModelMap<ExternalNativeLibrarySpec> libraries) {
-        Map<BuildTaskContext, OutputRedirectingExec> buildTasks = [:]
-
+    void configureExternalLibraries(ModelMap<ExternalNativeLibrarySpec> libraries) {
         libraries.all { library ->
             library.binaries.withType(NativeBinarySpec) { binary ->
-                // Create the task configuration
-                BuildTaskContext taskContext = new BuildTaskContext(binary)
-                Utils.invokeWithContext(library.configureBuild, taskContext)
-
-                // Create the task (or reuse one if an exact duplicate exists)
-                OutputRedirectingExec task = buildTasks.find { it.key == taskContext } ?.value
-                if (!task) {
-                    String taskName = binary.tasks.taskName('externalBuild')
-
-                    binary.tasks.create(taskName, OutputRedirectingExec) {
-                        it.executable = taskContext.executable
-                        it.args = taskContext.args
-                        it.environment = taskContext.environment
-                        it.redirectOutput = true
-                        task = it
-                    }
-
-                    buildTasks[taskContext] = task
-                }
-
                 // Evaluate the "externalOutputs" block
-                ExternalOutputsContext outputsContext = new ExternalOutputsContext(taskContext)
+                ExternalOutputsContext outputsContext = new ExternalOutputsContext(binary)
                 Utils.invokeWithContext(library.externalOutputs, outputsContext)
 
-                // Create the source set (includes headers and requires the OutputRedirectingExec as a dependency)
-                binary.sources.create('externalSource', CppSourceSet) {
-                    it.builtBy(task)
+                // Create the source set to include exported headers
+                binary.sources.create(EXTERNAL_SOURCE, CppSourceSet) {
                     it.exportedHeaders.srcDirs = outputsContext.headersContext.srcDirs
                 }
 
@@ -80,6 +60,38 @@ class ExternalBuildPlugin extends RuleSource {
                     }
                 }
             }
+        }
+    }
+
+    @Mutate
+    void createExternalLibraryTasks(ModelMap<Task> tasks, @Path('binaries') ModelMap<NativeBinarySpec> binaries) {
+        Map<BuildTaskContext, OutputRedirectingExec> buildTasks = [:]
+
+        binaries.findAll { it.component in ExternalNativeLibrarySpec } .each { NativeBinarySpec binary ->
+            ExternalNativeLibrarySpec library = binary.component as ExternalNativeLibrarySpec
+
+            // Create the task configuration
+            BuildTaskContext taskContext = new BuildTaskContext(binary)
+            Utils.invokeWithContext(library.configureBuild, taskContext)
+
+            // Create the task (or reuse one if an exact duplicate exists)
+            OutputRedirectingExec buildTask = buildTasks.find { it.key == taskContext } ?.value
+            if (!buildTask) {
+                String taskName = binary.tasks.taskName(EXTERNAL_BUILD_TASK)
+
+                binary.tasks.create(taskName, OutputRedirectingExec) {
+                    it.executable = taskContext.executable
+                    it.args = taskContext.args
+                    it.environment = taskContext.environment
+                    it.redirectOutput = true
+                    buildTask = it
+                }
+
+                buildTasks[taskContext] = buildTask
+            }
+
+            buildTask.dependsOn(binary.libs*.linkFiles)
+            binary.sources.get(EXTERNAL_SOURCE).builtBy(buildTask)
         }
     }
 }

@@ -13,14 +13,6 @@ class NativeBinaryContext {
     final BuildType buildType
     final Flavor flavor
 
-    NativeBinaryContext(NativeBinaryContext other) {
-        binary = other.binary
-        targetPlatform = other.targetPlatform
-        toolChain = other.toolChain
-        buildType = other.buildType
-        flavor = other.flavor
-    }
-
     NativeBinaryContext(NativeBinarySpec binary) {
         this.binary = binary
         targetPlatform = binary.targetPlatform
