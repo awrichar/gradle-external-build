@@ -2,6 +2,7 @@ package co.arichardson.gradle.make
 
 import co.arichardson.gradle.make.context.BuildConfigContext
 import co.arichardson.gradle.make.context.BuildOutputContext
+import co.arichardson.gradle.make.internal.DefaultExternalNativeExecutableSpec
 import co.arichardson.gradle.make.internal.DefaultExternalNativeLibrarySpec
 import org.gradle.api.Task
 import org.gradle.api.tasks.StopExecutionException
@@ -25,10 +26,15 @@ class ExternalBuildPlugin extends RuleSource {
         builder.defaultImplementation(DefaultExternalNativeLibrarySpec)
     }
 
+    @ComponentType
+    void registerExternalExecutableType(TypeBuilder<ExternalNativeExecutableSpec> builder) {
+        builder.defaultImplementation(DefaultExternalNativeExecutableSpec)
+    }
+
     @Mutate
-    void addExternalSourceSet(ModelMap<ExternalNativeLibrarySpec> libraries) {
-        libraries.all { library ->
-            library.binaries.withType(NativeBinarySpec) { binary ->
+    void addExternalSourceSet(ModelMap<ExternalNativeComponentSpec> components) {
+        components.all { component ->
+            component.binaries.withType(NativeBinarySpec) { binary ->
                 binary.sources.create(EXTERNAL_SOURCE, CppSourceSet)
             }
         }
@@ -38,18 +44,18 @@ class ExternalBuildPlugin extends RuleSource {
     void createExternalLibraryTasks(ModelMap<Task> tasks, @Path('binaries') ModelMap<NativeBinarySpec> binaries) {
         List<Task> buildTasks = []
 
-        binaries.findAll { it.component in ExternalNativeLibrarySpec } .each { NativeBinarySpec binary ->
-            ExternalNativeLibrarySpec library = binary.component as ExternalNativeLibrarySpec
+        binaries.findAll { it.component in ExternalNativeComponentSpec } .each { NativeBinarySpec binary ->
+            ExternalNativeComponentSpec component = binary.component as ExternalNativeComponentSpec
             CppSourceSet externalSource = binary.sources.get(EXTERNAL_SOURCE) as CppSourceSet
 
             // Create a task for the external build
             String taskName = binary.tasks.taskName(EXTERNAL_BUILD_TASK)
-            tasks.create(taskName, library.buildTaskType)
+            tasks.create(taskName, component.buildTaskType)
             Task buildTask = tasks.get(taskName)
 
             // Configure the task with the "buildConfig" block
             BuildConfigContext inputContext = new BuildConfigContext(binary, buildTask)
-            Utils.invokeWithContext(library.buildConfig, inputContext)
+            Utils.invokeWithContext(component.buildConfig, inputContext)
 
             // Reuse an existing task if a duplicate exists
             Task existingTask = buildTasks.find { it.equals(buildTask) }
@@ -65,7 +71,7 @@ class ExternalBuildPlugin extends RuleSource {
 
             // Evaluate the "buildOutput" block
             BuildOutputContext outputContext = new BuildOutputContext(binary)
-            Utils.invokeWithContext(library.buildOutput, outputContext)
+            Utils.invokeWithContext(component.buildOutput, outputContext)
 
             // Disable all normal compile tasks
             binary.tasks.withType(AbstractNativeCompileTask) {
