@@ -1,6 +1,7 @@
 package co.arichardson.gradle.make.tasks
 
 import org.gradle.api.tasks.Exec
+import org.gradle.logging.ConsoleRenderer
 import org.gradle.process.internal.ExecException
 
 class OutputRedirectingExec extends Exec {
@@ -26,7 +27,8 @@ class OutputRedirectingExec extends Exec {
             super.exec()
 
             if (execResult.exitValue != 0) {
-                throw new ExecException("Exec failed with code ${execResult.exitValue}.\nSee the full log at ${errorFile}")
+                String errorsUrl = new ConsoleRenderer().asClickableFileUrl(errorFile)
+                throw new ExecException("Exec failed with code ${execResult.exitValue}.\nSee the full log at ${errorsUrl}")
             }
         } else {
             super.exec()
