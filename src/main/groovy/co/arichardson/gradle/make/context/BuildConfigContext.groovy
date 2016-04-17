@@ -4,18 +4,27 @@ import org.gradle.api.Task
 import org.gradle.nativeplatform.NativeBinarySpec
 
 class BuildConfigContext extends NativeBinaryContext {
-    final List<File> linkedLibraries
     final Task buildTask
 
     BuildConfigContext(NativeBinarySpec binary, Task task) {
         super(binary)
-
-        linkedLibraries = []
-        binary.libs*.linkFiles.each {
-            linkedLibraries.addAll(it.files)
-        }
-
         buildTask = task
+    }
+
+    List<File> getRequiredLibraries() {
+        List<File> libraries = []
+        binary.libs*.linkFiles.each {
+            libraries.addAll(it.files)
+        }
+        return libraries
+    }
+
+    List<File> getRequiredIncludes() {
+        List<File> includes = []
+        binary.libs*.includeRoots.each {
+            includes.addAll(it.files)
+        }
+        return includes
     }
 
     def methodMissing(String name, args) {
