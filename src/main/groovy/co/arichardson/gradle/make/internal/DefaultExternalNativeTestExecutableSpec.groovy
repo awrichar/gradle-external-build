@@ -1,0 +1,6 @@
+package co.arichardson.gradle.make.internal
+
+import co.arichardson.gradle.make.ExternalNativeTestExecutableSpec
+
+class DefaultExternalNativeTestExecutableSpec extends DefaultExternalNativeExecutableSpec implements ExternalNativeTestExecutableSpec {
+}
