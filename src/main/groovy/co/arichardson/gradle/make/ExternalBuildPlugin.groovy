@@ -30,38 +30,10 @@ class ExternalBuildPlugin extends RuleSource {
     }
 
     @Mutate
-    void configureExternalLibraries(ModelMap<ExternalNativeLibrarySpec> libraries) {
+    void addExternalSourceSet(ModelMap<ExternalNativeLibrarySpec> libraries) {
         libraries.all { library ->
             library.binaries.withType(NativeBinarySpec) { binary ->
-                // Evaluate the "buildOutput" block
-                BuildOutputContext outputContext = new BuildOutputContext(binary)
-                Utils.invokeWithContext(library.buildOutput, outputContext)
-
-                // Create the source set to include exported headers
-                binary.sources.create(EXTERNAL_SOURCE, CppSourceSet) {
-                    it.exportedHeaders.srcDirs = outputContext.headersContext.srcDirs
-                }
-
-                // Disable all normal compile tasks
-                binary.tasks.withType(AbstractNativeCompileTask) {
-                    it.enabled = false
-                }
-
-                // Replace the create/link task with a simple copy
-                binary.tasks.withType(ObjectFilesToBinary) { mainTask ->
-                    FileOperations ops = mainTask.services.get(FileOperations)
-
-                    mainTask.inputs.file outputContext.outputFile
-                    mainTask.doFirst {
-                        ops.copy(new ClosureBackedAction<CopySpec>({
-                            it.from outputContext.outputFile
-                            it.into mainTask.outputFile.parentFile
-                            it.rename { mainTask.outputFile.name }
-                        }))
-
-                        throw new StopExecutionException()
-                    }
-                }
+                binary.sources.create(EXTERNAL_SOURCE, CppSourceSet)
             }
         }
     }
@@ -72,11 +44,12 @@ class ExternalBuildPlugin extends RuleSource {
 
         binaries.findAll { it.component in ExternalNativeLibrarySpec } .each { NativeBinarySpec binary ->
             ExternalNativeLibrarySpec library = binary.component as ExternalNativeLibrarySpec
+            CppSourceSet externalSource = binary.sources.get(EXTERNAL_SOURCE) as CppSourceSet
 
             // Create a task for the external build
             String taskName = binary.tasks.taskName(EXTERNAL_BUILD_TASK)
             tasks.create(taskName, library.buildTaskType)
-            Task buildTask = tasks.get(taskName) as OutputRedirectingExec
+            Task buildTask = tasks.get(taskName)
 
             // Configure the task with the "buildConfig" block
             BuildConfigContext inputContext = new BuildConfigContext(binary, buildTask)
@@ -90,8 +63,37 @@ class ExternalBuildPlugin extends RuleSource {
                 buildTasks << buildTask
             }
 
+            // Set up dependencies for the task
             buildTask.dependsOn(binary.libs*.linkFiles)
-            binary.sources.get(EXTERNAL_SOURCE).builtBy(buildTask)
+            externalSource.builtBy(buildTask)
+
+            // Evaluate the "buildOutput" block
+            BuildOutputContext outputContext = new BuildOutputContext(binary)
+            Utils.invokeWithContext(library.buildOutput, outputContext)
+
+            // Configure the source set to include exported headers
+            externalSource.exportedHeaders.srcDirs = outputContext.headersContext.srcDirs
+
+            // Disable all normal compile tasks
+            binary.tasks.withType(AbstractNativeCompileTask) {
+                it.enabled = false
+            }
+
+            // Replace the create/link task with a simple copy
+            binary.tasks.withType(ObjectFilesToBinary) { mainTask ->
+                FileOperations ops = mainTask.services.get(FileOperations)
+
+                mainTask.inputs.file outputContext.outputFile
+                mainTask.doFirst {
+                    ops.copy(new ClosureBackedAction<CopySpec>({
+                        it.from outputContext.outputFile
+                        it.into mainTask.outputFile.parentFile
+                        it.rename { mainTask.outputFile.name }
+                    }))
+
+                    throw new StopExecutionException()
+                }
+            }
         }
     }
 }
