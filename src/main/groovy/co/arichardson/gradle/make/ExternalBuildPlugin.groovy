@@ -3,11 +3,7 @@ package co.arichardson.gradle.make
 import co.arichardson.gradle.make.context.BuildConfigContext
 import co.arichardson.gradle.make.context.BuildOutputContext
 import co.arichardson.gradle.make.internal.DefaultExternalNativeLibrarySpec
-import co.arichardson.gradle.make.tasks.OutputRedirectingExec
 import org.gradle.api.Task
-import org.gradle.api.file.CopySpec
-import org.gradle.api.internal.ClosureBackedAction
-import org.gradle.api.internal.file.FileOperations
 import org.gradle.api.tasks.StopExecutionException
 import org.gradle.language.cpp.CppSourceSet
 import org.gradle.language.nativeplatform.tasks.AbstractNativeCompileTask
@@ -81,15 +77,13 @@ class ExternalBuildPlugin extends RuleSource {
 
             // Replace the create/link task with a simple copy
             binary.tasks.withType(ObjectFilesToBinary) { mainTask ->
-                FileOperations ops = mainTask.services.get(FileOperations)
-
                 mainTask.inputs.file outputContext.outputFile
                 mainTask.doFirst {
-                    ops.copy(new ClosureBackedAction<CopySpec>({
+                    mainTask.project.copy {
                         it.from outputContext.outputFile
                         it.into mainTask.outputFile.parentFile
                         it.rename { mainTask.outputFile.name }
-                    }))
+                    }
 
                     throw new StopExecutionException()
                 }
