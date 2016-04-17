@@ -1,8 +1,8 @@
 apply plugin: 'groovy'
 apply plugin: 'maven-publish'
 
-def publishName = 'make'
-def url = 'https://github.com/awrichar/gradle-external-build'
+def publishName = 'external-build'
+def homepageUrl = 'https://github.com/awrichar/gradle-external-build'
 group = 'co.arichardson.gradle'
 version = '1.0'
 
@@ -35,7 +35,7 @@ publishing {
             from components.java
             artifactId = publishName
             pom.withXml {
-                asNode().appendNode('url', url)
+                asNode().appendNode('url', homepageUrl)
             }
         }
     }
