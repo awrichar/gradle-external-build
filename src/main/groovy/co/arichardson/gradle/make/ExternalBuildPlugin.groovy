@@ -67,9 +67,6 @@ class ExternalBuildPlugin extends RuleSource {
             BuildOutputContext outputContext = new BuildOutputContext(binary)
             Utils.invokeWithContext(library.buildOutput, outputContext)
 
-            // Configure the source set to include exported headers
-            externalSource.exportedHeaders.srcDirs = outputContext.headersContext.srcDirs
-
             // Disable all normal compile tasks
             binary.tasks.withType(AbstractNativeCompileTask) {
                 it.enabled = false
