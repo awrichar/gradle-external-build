@@ -25,4 +25,12 @@ class QMake extends GnuMake {
             qmakeArgs == other.qmakeArgs &&
             super.equals(other)
     }
+
+    void qmakeExecutable(String executable) {
+        qmakeExecutable = executable
+    }
+
+    void qmakeArgs(String... args) {
+        qmakeArgs.addAll(args)
+    }
 }

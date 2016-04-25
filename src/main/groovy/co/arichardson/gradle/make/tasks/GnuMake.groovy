@@ -1,7 +1,7 @@
 package co.arichardson.gradle.make.tasks
 
 class GnuMake extends OutputRedirectingExec {
-    File makefile
+    Object makefile
 
     public GnuMake() {
         executable 'make'
@@ -11,7 +11,7 @@ class GnuMake extends OutputRedirectingExec {
     @Override
     protected void exec() {
         if (makefile) {
-            args = ['-f', makefile.path] + args
+            args = ['-f', project.file(makefile).path] + args
         }
 
         super.exec()
@@ -22,5 +22,9 @@ class GnuMake extends OutputRedirectingExec {
         other in GnuMake &&
             makefile == other.makefile &&
             super.equals(other)
+    }
+
+    void makefile(Object makefile) {
+        this.makefile = makefile
     }
 }
