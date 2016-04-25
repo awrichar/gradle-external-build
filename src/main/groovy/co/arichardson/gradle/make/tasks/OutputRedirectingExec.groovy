@@ -17,9 +17,10 @@ class OutputRedirectingExec extends Exec {
 
     @Override
     protected void exec() {
+        logFile.parentFile.mkdirs()
+        errorFile.parentFile.mkdirs()
+
         if (redirectOutput) {
-            logFile.parentFile.mkdirs()
-            errorFile.parentFile.mkdirs()
             standardOutput = logFile.newOutputStream()
             errorOutput = errorFile.newOutputStream()
 
@@ -31,6 +32,9 @@ class OutputRedirectingExec extends Exec {
                 throw new ExecException("Exec failed with code ${execResult.exitValue}.\nSee the full log at ${errorsUrl}")
             }
         } else {
+            standardOutput = new MultiOutputStream(standardOutput, logFile.newOutputStream())
+            errorOutput = new MultiOutputStream(errorOutput, errorFile.newOutputStream())
+
             super.exec()
         }
     }
