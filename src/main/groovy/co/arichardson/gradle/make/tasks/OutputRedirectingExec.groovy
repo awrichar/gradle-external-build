@@ -28,6 +28,15 @@ class OutputRedirectingExec extends Exec {
             super.exec()
 
             if (execResult.exitValue != 0) {
+                // Log up to the 10 last lines of error output
+                List<String> lines = errorFile.readLines()
+                int endLine = lines.size() - 1
+                if (endLine > 0) {
+                    int startLine = lines.size() - 10
+                    if (startLine < 0) startLine = 0
+                    logger.error(lines[startLine..endLine].join('\n'))
+                }
+
                 String errorsUrl = new ConsoleRenderer().asClickableFileUrl(errorFile)
                 throw new ExecException("Exec failed with code ${execResult.exitValue}.\nSee the full log at ${errorsUrl}")
             }
