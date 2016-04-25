@@ -4,25 +4,19 @@ import co.arichardson.gradle.make.context.BuildConfigContext
 import co.arichardson.gradle.make.context.BuildOutputContext
 import co.arichardson.gradle.make.internal.DefaultExternalNativeExecutableSpec
 import co.arichardson.gradle.make.internal.DefaultExternalNativeLibrarySpec
-import co.arichardson.gradle.make.internal.DefaultExternalNativeTestExecutableSpec
 import org.gradle.api.Task
 import org.gradle.api.tasks.StopExecutionException
 import org.gradle.language.cpp.CppSourceSet
 import org.gradle.language.nativeplatform.tasks.AbstractNativeCompileTask
-import org.gradle.model.Finalize
 import org.gradle.model.ModelMap
 import org.gradle.model.Mutate
 import org.gradle.model.Path
 import org.gradle.model.RuleSource
 import org.gradle.nativeplatform.NativeBinarySpec
-import org.gradle.nativeplatform.NativeExecutableBinarySpec
-import org.gradle.nativeplatform.tasks.InstallExecutable
 import org.gradle.nativeplatform.tasks.ObjectFilesToBinary
-import org.gradle.nativeplatform.test.tasks.RunTestExecutable
 import org.gradle.platform.base.ComponentSpec
 import org.gradle.platform.base.ComponentType
 import org.gradle.platform.base.TypeBuilder
-import org.gradle.platform.base.internal.BinaryNamingScheme
 
 class ExternalBuildPlugin extends RuleSource {
     public static final String EXTERNAL_SOURCE = 'externalSource'
@@ -36,11 +30,6 @@ class ExternalBuildPlugin extends RuleSource {
     @ComponentType
     void registerExternalExecutableType(TypeBuilder<ExternalNativeExecutableSpec> builder) {
         builder.defaultImplementation(DefaultExternalNativeExecutableSpec)
-    }
-
-    @ComponentType
-    void registerExternalTestExecutableType(TypeBuilder<ExternalNativeTestExecutableSpec> builder) {
-        builder.defaultImplementation(DefaultExternalNativeTestExecutableSpec)
     }
 
     @Mutate
@@ -108,38 +97,5 @@ class ExternalBuildPlugin extends RuleSource {
                 }
             }
         }
-    }
-
-    @Finalize
-    void createTestRunTask(@Path('binaries') ModelMap<NativeExecutableBinarySpec> binaries) {
-        withComponentType(binaries, ExternalNativeTestExecutableSpec).each { NativeExecutableBinarySpec binary ->
-            binary.tasks.create(binary.tasks.taskName('run'), RunTestExecutable, {})
-        }
-    }
-
-    @Finalize
-    void configureTestRunTask(ModelMap<Task> tasks, @Path('binaries') ModelMap<NativeExecutableBinarySpec> binaries) {
-        withComponentType(binaries, ExternalNativeTestExecutableSpec).each { NativeExecutableBinarySpec binary ->
-            BinaryNamingScheme namingScheme = binary.getNamingScheme()
-            InstallExecutable installTask = binary.tasks.install as InstallExecutable
-            RunTestExecutable runTask = getTestRunTask(binary)
-
-            runTask.inputs.files(installTask.outputs.files)
-            runTask.executable = installTask.runScript
-            runTask.outputDir = namingScheme.getOutputDirectory(runTask.project.buildDir, 'test-results')
-        }
-    }
-
-    @Mutate
-    void attachTestTaskToCheckLifecycle(@Path('tasks.check') Task checkTask, @Path('binaries') ModelMap<NativeExecutableBinarySpec> binaries) {
-        withComponentType(binaries, ExternalNativeTestExecutableSpec).each { NativeExecutableBinarySpec binary ->
-            if (binary.buildable) {
-                checkTask.dependsOn(getTestRunTask(binary))
-            }
-        }
-    }
-
-    private static RunTestExecutable getTestRunTask(NativeExecutableBinarySpec binary) {
-        binary.tasks.find { it in RunTestExecutable } as RunTestExecutable
     }
 }
