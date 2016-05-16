@@ -2,10 +2,11 @@ package co.arichardson.gradle.make.tasks
 
 class GnuMake extends OutputRedirectingExec {
     Object makefile
+    int jobs
 
     public GnuMake() {
         executable 'make'
-        args '-j', project.gradle.startParameter.maxWorkerCount
+        jobs = project.gradle.startParameter.maxWorkerCount
     }
 
     @Override
@@ -13,6 +14,8 @@ class GnuMake extends OutputRedirectingExec {
         if (makefile) {
             args = ['-f', project.file(makefile).path] + args
         }
+
+        args '-j', jobs
 
         super.exec()
     }
@@ -26,5 +29,9 @@ class GnuMake extends OutputRedirectingExec {
 
     void makefile(Object makefile) {
         this.makefile = makefile
+    }
+
+    void jobs(int jobs) {
+        this.jobs = jobs
     }
 }
