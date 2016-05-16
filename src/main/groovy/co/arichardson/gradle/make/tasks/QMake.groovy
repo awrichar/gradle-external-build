@@ -4,7 +4,8 @@ import org.gradle.process.internal.ExecAction
 
 class QMake extends GnuMake {
     String qmakeExecutable = 'qmake'
-    List<String> qmakeArgs = []
+    List<Object> qmakeArgs = []
+    Object qmakeProject
 
     @Override
     protected void exec() {
@@ -13,6 +14,8 @@ class QMake extends GnuMake {
         qmakeAction.args = qmakeArgs
         qmakeAction.environment = environment
         qmakeAction.workingDir = workingDir
+
+        if (qmakeProject) qmakeAction.args(project.file(qmakeProject).path)
 
         new OutputRedirector(this, 'qmake').redirect(qmakeAction, redirectOutput) {
             qmakeAction.execute()
@@ -26,6 +29,7 @@ class QMake extends GnuMake {
         other in QMake &&
             qmakeExecutable == other.qmakeExecutable &&
             qmakeArgs == other.qmakeArgs &&
+            qmakeProject == other.qmakeProject &&
             super.equals(other)
     }
 
@@ -33,7 +37,11 @@ class QMake extends GnuMake {
         qmakeExecutable = executable
     }
 
-    void qmakeArgs(String... args) {
+    void qmakeArgs(Object... args) {
         qmakeArgs.addAll(args)
+    }
+
+    void qmakeProject(Object projectFile) {
+        qmakeProject = projectFile
     }
 }
