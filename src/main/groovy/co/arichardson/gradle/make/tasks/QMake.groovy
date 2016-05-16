@@ -13,7 +13,10 @@ class QMake extends GnuMake {
         qmakeAction.args = qmakeArgs
         qmakeAction.environment = environment
         qmakeAction.workingDir = workingDir
-        qmakeAction.execute()
+
+        new OutputRedirector(this, 'qmake').redirect(qmakeAction, redirectOutput) {
+            qmakeAction.execute()
+        }
 
         super.exec()
     }
