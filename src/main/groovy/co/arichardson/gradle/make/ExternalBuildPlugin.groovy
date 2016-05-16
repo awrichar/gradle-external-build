@@ -55,12 +55,12 @@ class ExternalBuildPlugin extends RuleSource {
 
             // Create a task for the external build
             String taskName = binary.tasks.taskName(EXTERNAL_BUILD_TASK)
-            tasks.create(taskName, component.buildTaskType)
-            Task buildTask = tasks.get(taskName)
+            Task buildTask = null
+            binary.tasks.create(taskName, component.buildTaskType) { buildTask = it }
 
             // Configure the task with the "buildConfig" block
             BuildConfigContext inputContext = new BuildConfigContext(binary, buildTask)
-            Utils.invokeWithContext(component.buildConfig, inputContext)
+            component.buildConfig.execute(inputContext)
 
             // Reuse an existing task if a duplicate exists
             Task existingTask = buildTasks.find { it.equals(buildTask) }
@@ -76,7 +76,7 @@ class ExternalBuildPlugin extends RuleSource {
 
             // Evaluate the "buildOutput" block
             BuildOutputContext outputContext = new BuildOutputContext(binary)
-            Utils.invokeWithContext(component.buildOutput, outputContext)
+            component.buildOutput.execute(outputContext)
 
             // Disable all normal compile tasks
             binary.tasks.withType(AbstractNativeCompileTask) {

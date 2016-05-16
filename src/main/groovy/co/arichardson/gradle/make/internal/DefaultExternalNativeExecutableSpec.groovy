@@ -1,29 +1,62 @@
 package co.arichardson.gradle.make.internal
 
+import co.arichardson.gradle.make.ExternalNativeComponentSpec
 import co.arichardson.gradle.make.ExternalNativeExecutableSpec
+import co.arichardson.gradle.make.context.BuildConfigContext
+import co.arichardson.gradle.make.context.BuildOutputContext
 import co.arichardson.gradle.make.tasks.OutputRedirectingExec
+import org.gradle.api.Action
 import org.gradle.api.Task
+import org.gradle.api.internal.ClosureBackedAction
+import org.gradle.internal.Actions
 import org.gradle.nativeplatform.internal.DefaultNativeExecutableSpec
 
 class DefaultExternalNativeExecutableSpec extends DefaultNativeExecutableSpec implements ExternalNativeExecutableSpec {
     private Class<Task> buildTaskType = OutputRedirectingExec
-    private Closure<Void> buildConfigAction = {}
-    private Closure<Void> buildOutputAction = {}
+    private Action<BuildConfigContext> buildConfigAction = {}
+    private Action<BuildOutputContext> buildOutputAction = {}
 
     @Override
-    Closure<Void> getBuildConfig() {
+    Action<BuildConfigContext> getBuildConfig() {
         return buildConfigAction
     }
 
     @Override
+    void buildConfig(Action<BuildConfigContext> action) {
+        buildConfigAction = action
+    }
+
+    @Override
     void buildConfig(Closure<Void> action) {
+        buildConfig(new ClosureBackedAction<BuildConfigContext>(action))
+    }
+
+    @Override
+    void buildConfig(Class<Task> actionType, Action<BuildConfigContext> action) {
+        buildTaskType = actionType
         buildConfigAction = action
     }
 
     @Override
     void buildConfig(Class<Task> actionType, Closure<Void> action) {
-        buildTaskType = actionType
-        buildConfigAction = action
+        buildConfig(actionType, new ClosureBackedAction<BuildConfigContext>(action))
+    }
+
+    @Override
+    void buildConfig(ExternalNativeComponentSpec component) {
+        buildTaskType = component.buildTaskType
+        buildConfigAction = component.buildConfig
+    }
+
+    @Override
+    void buildConfig(ExternalNativeComponentSpec component, Action<BuildConfigContext> action) {
+        buildTaskType = component.buildTaskType
+        buildConfigAction = Actions.composite(component.buildConfig, action)
+    }
+
+    @Override
+    void buildConfig(ExternalNativeComponentSpec component, Closure<Void> action) {
+        buildConfig(component, new ClosureBackedAction<BuildConfigContext>(action))
     }
 
     @Override
@@ -32,12 +65,17 @@ class DefaultExternalNativeExecutableSpec extends DefaultNativeExecutableSpec im
     }
 
     @Override
-    Closure<Void> getBuildOutput() {
+    Action<BuildOutputContext> getBuildOutput() {
         return buildOutputAction
     }
 
     @Override
-    void buildOutput(Closure<Void> action) {
+    void buildOutput(Action<BuildOutputContext> action) {
         buildOutputAction = action
+    }
+
+    @Override
+    void buildOutput(Closure<Void> action) {
+        buildOutput(new ClosureBackedAction<BuildOutputContext>(action))
     }
 }
