@@ -9,7 +9,6 @@ import org.gradle.process.internal.ExecException
 class OutputRedirector {
     private static final String OUTPUT_FILENAME = 'output.txt'
     private static final String ERROR_FILENAME = 'errors.txt'
-    private static final int ERROR_LOG_SIZE = 10
 
     private final Task task
     final File logFile
@@ -44,13 +43,8 @@ class OutputRedirector {
             ExecResult result = execAction.call()
 
             if (result.exitValue != 0) {
-                // Log up to the 10 last lines of error output
-                List<String> lines = errorFile.readLines()
-                int endLine = lines.size() - 1
-                if (endLine > 0) {
-                    int startLine = lines.size() - ERROR_LOG_SIZE
-                    if (startLine < 0) startLine = 0
-                    task.logger.error(lines[startLine..endLine].join('\n'))
+                if (errorFile.size() > 0) {
+                    task.logger.error(errorFile.text)
                 }
 
                 String errorsUrl = new ConsoleRenderer().asClickableFileUrl(errorFile)
