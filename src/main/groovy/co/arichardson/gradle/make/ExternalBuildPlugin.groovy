@@ -85,6 +85,8 @@ class ExternalBuildPlugin extends RuleSource {
 
             // Replace the create/link task with a simple copy
             binary.tasks.withType(ObjectFilesToBinary) { mainTask ->
+                mainTask.deleteAllActions()
+
                 mainTask.inputs.file outputContext.outputFile
                 mainTask.doFirst {
                     mainTask.project.copy {
@@ -92,8 +94,6 @@ class ExternalBuildPlugin extends RuleSource {
                         it.into mainTask.outputFile.parentFile
                         it.rename { mainTask.outputFile.name }
                     }
-
-                    throw new StopExecutionException()
                 }
             }
         }
