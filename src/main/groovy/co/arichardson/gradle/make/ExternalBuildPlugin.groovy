@@ -93,6 +93,7 @@ class ExternalBuildPlugin extends RuleSource {
                         it.from outputContext.outputFile
                         it.into mainTask.outputFile.parentFile
                         it.rename { mainTask.outputFile.name }
+                        it.fileMode 0755
                     }
                 }
             }
