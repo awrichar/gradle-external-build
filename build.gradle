@@ -4,7 +4,7 @@ apply plugin: 'maven-publish'
 def publishName = 'external-build'
 def homepageUrl = 'https://github.com/awrichar/gradle-external-build'
 group = 'co.arichardson.gradle'
-version = '1.3'
+version = '1.4'
 
 dependencies {
     compile localGroovy()
