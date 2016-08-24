@@ -3,7 +3,7 @@ package co.arichardson.gradle.make.tasks
 import org.gradle.process.internal.ExecAction
 
 class AutoMake extends GnuMake {
-    Object configureExecutable
+    Object configureExecutable = project.file('configure')
     List<Object> configureArgs = []
     String crossCompileHost
     Object installPrefix
