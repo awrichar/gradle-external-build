@@ -10,6 +10,14 @@ class AutoMake extends GnuMake {
 
     @Override
     protected void exec() {
+        if (workingDir) {
+            workingDir.mkdirs()
+        }
+
+        if (installPrefix) {
+            project.file(installPrefix).mkdirs()
+        }
+
         ExecAction configureAction = getExecActionFactory().newExecAction()
         configureAction.executable = configureExecutable
         configureAction.environment = environment

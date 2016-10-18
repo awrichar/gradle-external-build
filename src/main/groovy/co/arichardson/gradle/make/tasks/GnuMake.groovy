@@ -11,6 +11,10 @@ class GnuMake extends OutputRedirectingExec {
 
     @Override
     protected void exec() {
+        if (workingDir) {
+            workingDir.mkdirs()
+        }
+
         if (makefile) {
             args = ['-f', project.file(makefile).path] + args
         }
