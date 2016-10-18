@@ -1,8 +1,11 @@
 package co.arichardson.gradle.make.tasks
 
+import org.gradle.process.internal.ExecAction
+
 class GnuMake extends OutputRedirectingExec {
     Object makefile
     int jobs
+    List<String> targets = []
 
     public GnuMake() {
         executable 'make'
@@ -21,7 +24,18 @@ class GnuMake extends OutputRedirectingExec {
 
         args '-j', jobs
 
-        super.exec()
+        if (targets) {
+            targets.each { String target ->
+                ExecAction action = newSubAction()
+                action.args target
+
+                new OutputRedirector(this, "make${target.capitalize()}").redirect(action, redirectOutput) {
+                    action.execute()
+                }
+            }
+        } else {
+            super.exec()
+        }
     }
 
     @Override
@@ -33,6 +47,10 @@ class GnuMake extends OutputRedirectingExec {
 
     void makefile(Object makefile) {
         this.makefile = makefile
+    }
+
+    void targets(String... args) {
+        this.targets.addAll(args)
     }
 
     void jobs(int jobs) {

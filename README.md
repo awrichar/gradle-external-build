@@ -17,6 +17,7 @@ A Gradle plugin for seamlessly integrating with other build tools, including GNU
                 }
                 
                 buildConfig(GnuMake) {
+                    targets 'all', 'install'
                     environment = [
                         'PATH': toolChainPath,
                         'OUTPUT_DIR': getOutputDir(it),

@@ -13,10 +13,9 @@ class CMake extends GnuMake {
             workingDir.mkdirs()
         }
 
-        ExecAction cmakeAction = getExecActionFactory().newExecAction()
+        ExecAction cmakeAction = newSubAction()
         cmakeAction.executable = cmakeExecutable
-        cmakeAction.environment = environment
-        cmakeAction.workingDir = workingDir
+        cmakeAction.args = []
         cmakeAction.args cmakeArgs
 
         if (cmakeRoot) {

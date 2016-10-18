@@ -1,6 +1,7 @@
 package co.arichardson.gradle.make.tasks
 
 import org.gradle.api.tasks.Exec
+import org.gradle.process.internal.ExecAction
 
 class OutputRedirectingExec extends Exec {
     boolean redirectOutput = true
@@ -19,5 +20,17 @@ class OutputRedirectingExec extends Exec {
             executable == other.executable &&
             args == other.args &&
             environment == other.environment
+    }
+
+    protected ExecAction newSubAction() {
+        ExecAction action = execActionFactory.newExecAction()
+        action.executable = executable
+        action.args = args
+        action.workingDir = workingDir
+        action.environment = environment
+        action.standardInput = standardInput
+        action.standardOutput = standardOutput
+        action.errorOutput = errorOutput
+        return action
     }
 }

@@ -18,10 +18,9 @@ class AutoMake extends GnuMake {
             project.file(installPrefix).mkdirs()
         }
 
-        ExecAction configureAction = getExecActionFactory().newExecAction()
+        ExecAction configureAction = newSubAction()
         configureAction.executable = configureExecutable
-        configureAction.environment = environment
-        configureAction.workingDir = workingDir
+        configureAction.args = []
 
         if (crossCompileHost) {
             configureAction.args "--host=${crossCompileHost}"
