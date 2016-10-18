@@ -27,6 +27,26 @@ class BuildConfigContext extends NativeBinaryContext {
         return includes
     }
 
+    String getToolChainPath() {
+        return getToolChainPath(true)
+    }
+
+    String getToolChainPath(boolean includeSystemPath) {
+        String path = ""
+        if (toolChain.path) {
+            path += toolChain.path.join(File.pathSeparator)
+        }
+
+        if (includeSystemPath) {
+            if (path) {
+                path += File.pathSeparator
+            }
+            path += System.getenv('PATH')
+        }
+
+        return path
+    }
+
     def methodMissing(String name, args) {
         buildTask."$name"(*args)
     }
