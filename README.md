@@ -1,5 +1,5 @@
 # gradle-external-build
-A Gradle plugin for seamlessly integrating with other build tools, including GNU make, qmake, and more.
+A Gradle plugin for seamlessly integrating with other build tools, including GNU make, CMake, qmake, and more.
 
 ## Example Usage
 

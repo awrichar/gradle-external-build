@@ -46,7 +46,7 @@ class ExternalBuildPlugin extends RuleSource {
     }
 
     @Mutate
-    void createExternalLibraryTasks(ModelMap<Task> tasks, @Path('binaries') ModelMap<NativeBinarySpec> binaries) {
+    void createExternalBuildTasks(ModelMap<Task> tasks, @Path('binaries') ModelMap<NativeBinarySpec> binaries) {
         List<Task> buildTasks = []
 
         withComponentType(binaries, ExternalNativeComponentSpec).each { NativeBinarySpec binary ->
