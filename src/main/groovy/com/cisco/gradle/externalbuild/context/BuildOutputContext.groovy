@@ -1,6 +1,6 @@
-package co.arichardson.gradle.make.context
+package com.cisco.gradle.externalbuild.context
 
-import co.arichardson.gradle.make.ExternalBuildPlugin
+import com.cisco.gradle.externalbuild.ExternalBuildPlugin
 import org.gradle.language.cpp.CppSourceSet
 import org.gradle.nativeplatform.NativeBinarySpec
 

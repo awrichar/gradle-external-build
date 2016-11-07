@@ -1,11 +1,10 @@
-package co.arichardson.gradle.make
+package com.cisco.gradle.externalbuild
 
-import co.arichardson.gradle.make.context.BuildConfigContext
-import co.arichardson.gradle.make.context.BuildOutputContext
-import co.arichardson.gradle.make.internal.DefaultExternalNativeExecutableSpec
-import co.arichardson.gradle.make.internal.DefaultExternalNativeLibrarySpec
+import com.cisco.gradle.externalbuild.context.BuildConfigContext
+import com.cisco.gradle.externalbuild.context.BuildOutputContext
+import com.cisco.gradle.externalbuild.internal.DefaultExternalNativeExecutableSpec
+import com.cisco.gradle.externalbuild.internal.DefaultExternalNativeLibrarySpec
 import org.gradle.api.Task
-import org.gradle.api.tasks.StopExecutionException
 import org.gradle.language.cpp.CppSourceSet
 import org.gradle.language.nativeplatform.tasks.AbstractNativeCompileTask
 import org.gradle.model.ModelMap

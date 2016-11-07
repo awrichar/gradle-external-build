@@ -3,7 +3,7 @@ apply plugin: 'maven-publish'
 
 def publishName = 'external-build'
 def homepageUrl = 'https://github.com/awrichar/gradle-external-build'
-group = 'co.arichardson.gradle'
+group = 'com.cisco.gradle'
 version = '1.5'
 
 dependencies {

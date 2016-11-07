@@ -1,17 +1,17 @@
-package co.arichardson.gradle.make.internal
+package com.cisco.gradle.externalbuild.internal
 
-import co.arichardson.gradle.make.ExternalNativeComponentSpec
-import co.arichardson.gradle.make.ExternalNativeLibrarySpec
-import co.arichardson.gradle.make.context.BuildConfigContext
-import co.arichardson.gradle.make.context.BuildOutputContext
-import co.arichardson.gradle.make.tasks.OutputRedirectingExec
+import com.cisco.gradle.externalbuild.ExternalNativeComponentSpec
+import com.cisco.gradle.externalbuild.ExternalNativeExecutableSpec
+import com.cisco.gradle.externalbuild.context.BuildConfigContext
+import com.cisco.gradle.externalbuild.context.BuildOutputContext
+import com.cisco.gradle.externalbuild.tasks.OutputRedirectingExec
 import org.gradle.api.Action
 import org.gradle.api.Task
 import org.gradle.api.internal.ClosureBackedAction
 import org.gradle.internal.Actions
-import org.gradle.nativeplatform.internal.DefaultNativeLibrarySpec
+import org.gradle.nativeplatform.internal.DefaultNativeExecutableSpec
 
-class DefaultExternalNativeLibrarySpec extends DefaultNativeLibrarySpec implements ExternalNativeLibrarySpec {
+class DefaultExternalNativeExecutableSpec extends DefaultNativeExecutableSpec implements ExternalNativeExecutableSpec {
     private Class<Task> buildTaskType = OutputRedirectingExec
     private Action<BuildConfigContext> buildConfigAction = {}
     private Action<BuildOutputContext> buildOutputAction = {}

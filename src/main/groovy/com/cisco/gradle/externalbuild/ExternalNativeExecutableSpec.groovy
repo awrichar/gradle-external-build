@@ -1,4 +1,4 @@
-package co.arichardson.gradle.make
+package com.cisco.gradle.externalbuild
 
 import org.gradle.nativeplatform.NativeExecutableSpec
 

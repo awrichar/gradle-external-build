@@ -1,4 +1,4 @@
-package co.arichardson.gradle.make.tasks
+package com.cisco.gradle.externalbuild.tasks
 
 class MultiOutputStream extends OutputStream {
     private List<OutputStream> streams

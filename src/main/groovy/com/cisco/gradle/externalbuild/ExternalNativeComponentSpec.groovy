@@ -1,7 +1,7 @@
-package co.arichardson.gradle.make
+package com.cisco.gradle.externalbuild
 
-import co.arichardson.gradle.make.context.BuildConfigContext
-import co.arichardson.gradle.make.context.BuildOutputContext
+import com.cisco.gradle.externalbuild.context.BuildConfigContext
+import com.cisco.gradle.externalbuild.context.BuildOutputContext
 import org.gradle.api.Action
 import org.gradle.api.Task
 import org.gradle.nativeplatform.NativeComponentSpec

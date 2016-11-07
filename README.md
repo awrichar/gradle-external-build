@@ -3,9 +3,9 @@ A Gradle plugin for seamlessly integrating with other build tools, including GNU
 
 ## Example Usage
 
-    apply plugin: 'co.arichardson.external-build'
-    import co.arichardson.gradle.make.ExternalNativeLibrarySpec
-    import co.arichardson.gradle.make.tasks.GnuMake
+    apply plugin: 'com.cisco.external-build'
+    import com.cisco.gradle.externalbuild.ExternalNativeLibrarySpec
+    import com.cisco.gradle.externalbuild.GnuMake
 
     def getOutputDir = { file("${buildDir}/external-foo/${it.targetPlatform.name}") }
 

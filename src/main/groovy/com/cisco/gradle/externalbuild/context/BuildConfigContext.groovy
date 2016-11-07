@@ -1,4 +1,4 @@
-package co.arichardson.gradle.make.context
+package com.cisco.gradle.externalbuild.context
 
 import org.gradle.api.Task
 import org.gradle.nativeplatform.NativeBinarySpec

@@ -1,4 +1,4 @@
-package co.arichardson.gradle.make.context
+package com.cisco.gradle.externalbuild.context
 
 import org.gradle.nativeplatform.BuildType
 import org.gradle.nativeplatform.Flavor
