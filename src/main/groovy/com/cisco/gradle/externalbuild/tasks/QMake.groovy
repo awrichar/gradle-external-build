@@ -9,13 +9,19 @@ class QMake extends GnuMake {
 
     @Override
     protected void exec() {
+        if (workingDir) {
+            workingDir.mkdirs()
+        }
+
         ExecAction qmakeAction = getExecActionFactory().newExecAction()
         qmakeAction.executable = qmakeExecutable
         qmakeAction.args = qmakeArgs
         qmakeAction.environment = environment
         qmakeAction.workingDir = workingDir
 
-        if (qmakeProject) qmakeAction.args(project.file(qmakeProject).path)
+        if (qmakeProject) {
+            qmakeAction.args(project.file(qmakeProject).path)
+        }
 
         new OutputRedirector(this, 'qmake').redirect(qmakeAction, redirectOutput) {
             qmakeAction.execute()
