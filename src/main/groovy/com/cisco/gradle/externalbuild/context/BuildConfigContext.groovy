@@ -33,7 +33,7 @@ class BuildConfigContext extends NativeBinaryContext {
 
     String getToolChainPath(boolean includeSystemPath) {
         String path = ""
-        if (toolChain.path) {
+        if (toolChain.hasProperty('path') && toolChain.path) {
             path += toolChain.path.join(File.pathSeparator)
         }
 
