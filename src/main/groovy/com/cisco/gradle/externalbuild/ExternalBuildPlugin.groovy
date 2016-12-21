@@ -70,7 +70,7 @@ class ExternalBuildPlugin extends RuleSource {
             }
 
             // Set up dependencies for the task
-            buildTask.dependsOn(binary.libs*.linkFiles)
+            buildTask.dependsOn(binary.inputs - [externalSource])
             externalSource.builtBy(buildTask)
 
             // Evaluate the "buildOutput" block
