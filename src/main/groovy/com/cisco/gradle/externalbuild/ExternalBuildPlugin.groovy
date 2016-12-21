@@ -54,33 +54,31 @@ class ExternalBuildPlugin extends RuleSource {
 
             // Create a task for the external build
             String taskName = binary.tasks.taskName(EXTERNAL_BUILD_TASK)
-            Task buildTask = null
-            binary.tasks.create(taskName, component.buildTaskType) { buildTask = it }
+            binary.tasks.create(taskName, component.buildTaskType) { Task buildTask ->
+                buildTask.dependsOn(binary.inputs - [externalSource])
 
-            // Configure the task with the "buildConfig" block
-            BuildConfigContext inputContext = new BuildConfigContext(binary, buildTask)
-            component.buildConfig.execute(inputContext)
+                // Configure the task with the "buildConfig" block
+                BuildConfigContext inputContext = new BuildConfigContext(binary, buildTask)
+                component.buildConfig.execute(inputContext)
 
-            // Reuse an existing task if a duplicate exists
-            Task existingTask = buildTasks.find { it.equals(buildTask) }
-            if (existingTask) {
-                buildTask = existingTask
-            } else {
-                buildTasks << buildTask
+                // Reuse an existing task if a duplicate exists
+                Task existingTask = buildTasks.find { it.equals(buildTask) }
+                if (existingTask) {
+                    buildTask = existingTask
+                } else {
+                    buildTasks << buildTask
+                }
+
+                // Disable all normal compile tasks and replace with the build task
+                externalSource.builtBy(buildTask)
+                binary.tasks.withType(AbstractNativeCompileTask) {
+                    it.enabled = false
+                }
             }
-
-            // Set up dependencies for the task
-            buildTask.dependsOn(binary.inputs - [externalSource])
-            externalSource.builtBy(buildTask)
 
             // Evaluate the "buildOutput" block
             BuildOutputContext outputContext = new BuildOutputContext(binary)
             component.buildOutput.execute(outputContext)
-
-            // Disable all normal compile tasks
-            binary.tasks.withType(AbstractNativeCompileTask) {
-                it.enabled = false
-            }
 
             // Replace the create/link task with a simple copy
             binary.tasks.withType(ObjectFilesToBinary) { mainTask ->
