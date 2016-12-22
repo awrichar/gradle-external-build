@@ -7,19 +7,30 @@ import com.cisco.gradle.externalbuild.internal.DefaultExternalNativeLibrarySpec
 import org.gradle.api.Task
 import org.gradle.language.cpp.CppSourceSet
 import org.gradle.language.nativeplatform.tasks.AbstractNativeCompileTask
+import org.gradle.model.Defaults
+import org.gradle.model.Each
+import org.gradle.model.Finalize
+import org.gradle.model.Model
 import org.gradle.model.ModelMap
-import org.gradle.model.Mutate
-import org.gradle.model.Path
 import org.gradle.model.RuleSource
 import org.gradle.nativeplatform.NativeBinarySpec
 import org.gradle.nativeplatform.tasks.ObjectFilesToBinary
-import org.gradle.platform.base.ComponentSpec
+import org.gradle.platform.base.BinaryTasks
 import org.gradle.platform.base.ComponentType
 import org.gradle.platform.base.TypeBuilder
 
 class ExternalBuildPlugin extends RuleSource {
     public static final String EXTERNAL_SOURCE = 'externalSource'
     public static final String EXTERNAL_BUILD_TASK = 'externalBuild'
+
+    static class ExternalBuildSpec {
+        Map<Task, NativeBinarySpec> buildTasks = [:]
+    }
+
+    @Model
+    ExternalBuildSpec externalBuild() {
+        return new ExternalBuildSpec()
+    }
 
     @ComponentType
     void registerExternalLibraryType(TypeBuilder<ExternalNativeLibrarySpec> builder) {
@@ -31,69 +42,75 @@ class ExternalBuildPlugin extends RuleSource {
         builder.defaultImplementation(DefaultExternalNativeExecutableSpec)
     }
 
-    @Mutate
-    void addExternalSourceSet(ModelMap<ExternalNativeComponentSpec> components) {
-        components.all { component ->
-            component.binaries.withType(NativeBinarySpec) { binary ->
-                binary.sources.create(EXTERNAL_SOURCE, CppSourceSet)
+    @Defaults
+    void addExternalSourceSet(@Each ExternalNativeComponentSpec component) {
+        component.binaries.withType(NativeBinarySpec) { binary ->
+            binary.sources.create(EXTERNAL_SOURCE, CppSourceSet)
+        }
+    }
+
+    @BinaryTasks
+    void createExternalBuildTasks(ModelMap<Task> tasks, NativeBinarySpec binary, ExternalBuildSpec build) {
+        if (!(binary.component in ExternalNativeComponentSpec)) {
+            return
+        }
+
+        ExternalNativeComponentSpec component = binary.component as ExternalNativeComponentSpec
+        CppSourceSet externalSource = binary.sources.get(EXTERNAL_SOURCE) as CppSourceSet
+
+        // Create the external build task
+        tasks.create(binary.tasks.taskName(EXTERNAL_BUILD_TASK), component.buildTaskType) { Task buildTask ->
+            build.buildTasks[buildTask] = binary
+            externalSource.builtBy(buildTask)
+        }
+
+        // Evaluate the "buildOutput" block
+        BuildOutputContext outputContext = new BuildOutputContext(binary)
+        component.buildOutput.execute(outputContext)
+
+        // Disable all normal compile tasks
+        binary.tasks.withType(AbstractNativeCompileTask) {
+            it.enabled = false
+        }
+
+        // Replace the create/link task with a simple copy
+        binary.tasks.withType(ObjectFilesToBinary) { mainTask ->
+            mainTask.deleteAllActions()
+            mainTask.inputs.file(outputContext.outputFile)
+            mainTask.doFirst {
+                mainTask.project.copy {
+                    it.from outputContext.outputFile
+                    it.into mainTask.outputFile.parentFile
+                    it.rename { mainTask.outputFile.name }
+                    it.fileMode 0755
+                }
             }
         }
     }
 
-    private static <T extends NativeBinarySpec> List<T> withComponentType(ModelMap<T> binaries, Class<ComponentSpec> componentClass) {
-        binaries.findAll { it.component in componentClass }
-    }
+    @Finalize
+    void configureExternalBuildTask(@Each Task task, ExternalBuildSpec build) {
+        if (!(task in build.buildTasks)) {
+            return
+        }
 
-    @Mutate
-    void createExternalBuildTasks(ModelMap<Task> tasks, @Path('binaries') ModelMap<NativeBinarySpec> binaries) {
-        List<Task> buildTasks = []
+        NativeBinarySpec binary = build.buildTasks[task]
+        ExternalNativeComponentSpec component = binary.component as ExternalNativeComponentSpec
 
-        withComponentType(binaries, ExternalNativeComponentSpec).each { NativeBinarySpec binary ->
-            ExternalNativeComponentSpec component = binary.component as ExternalNativeComponentSpec
-            CppSourceSet externalSource = binary.sources.get(EXTERNAL_SOURCE) as CppSourceSet
+        // Evaluate the "buildConfig" block
+        BuildConfigContext inputContext = new BuildConfigContext(binary, task)
+        component.buildConfig.execute(inputContext)
 
-            // Create a task for the external build
-            String taskName = binary.tasks.taskName(EXTERNAL_BUILD_TASK)
-            binary.tasks.create(taskName, component.buildTaskType) { Task buildTask ->
-                buildTask.dependsOn(binary.inputs - [externalSource])
+        // Set library dependencies
+        task.dependsOn(binary.libs*.linkFiles)
 
-                // Configure the task with the "buildConfig" block
-                BuildConfigContext inputContext = new BuildConfigContext(binary, buildTask)
-                component.buildConfig.execute(inputContext)
-
-                // Reuse an existing task if a duplicate exists
-                Task existingTask = buildTasks.find { it.equals(buildTask) }
-                if (existingTask) {
-                    buildTask = existingTask
-                } else {
-                    buildTasks << buildTask
-                }
-
-                // Disable all normal compile tasks and replace with the build task
-                externalSource.builtBy(buildTask)
-                binary.tasks.withType(AbstractNativeCompileTask) {
-                    it.enabled = false
-                }
-            }
-
-            // Evaluate the "buildOutput" block
-            BuildOutputContext outputContext = new BuildOutputContext(binary)
-            component.buildOutput.execute(outputContext)
-
-            // Replace the create/link task with a simple copy
-            binary.tasks.withType(ObjectFilesToBinary) { mainTask ->
-                mainTask.deleteAllActions()
-
-                mainTask.inputs.file outputContext.outputFile
-                mainTask.doFirst {
-                    mainTask.project.copy {
-                        it.from outputContext.outputFile
-                        it.into mainTask.outputFile.parentFile
-                        it.rename { mainTask.outputFile.name }
-                        it.fileMode 0755
-                    }
-                }
-            }
+        // Check for a duplicate task, and reuse it if possible
+        Task duplicateTask = build.buildTasks.find { Task otherTask, NativeBinarySpec otherBinary ->
+            binary != otherBinary && task.equals(otherTask) && otherTask.enabled
+        }?.key
+        if (duplicateTask) {
+            task.dependsOn(duplicateTask)
+            task.enabled = false
         }
     }
 }

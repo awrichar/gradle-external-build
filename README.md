@@ -120,18 +120,16 @@ When a closure is provided to `buildConfig`, it will receive an instance of
 * **binary** - the NativeBinarySpec being configured.
 * **targetPlatform, toolChain, buildType, flavor** - convenient delegates to properties
 on `binary`.
+* **requiredLibraries** - a List of the library files this component requires.
+* **requiredIncludes** - a List of header folders this component requires.
 * **toolChainPath** - a String PATH that contains the toolchain path for `binary`, as well as the
 current System PATH.
 
 **Methods:**
 * **String getToolChainPath(boolean includeSystemPath)** - returns a String PATH that contains the toolchain
 path for `binary`, and optionally includes the current System PATH.
-* **void lib(Object library)** - convenient delegate for `binary.lib()`.
-* **void withResolvedLibraries(Closure action)** - provides additional configuration to be
-executed after all dependent libraries have been resolved. Within the closure, two properties
-are available to help configure the external task:
-  * **libraries** - a List of the library files this component requires.
-  * **headers** - a List of the header folders this component requires.
+* **void lib(Object library)** - convenient delegate for `binary.lib()`. Note that invocations of
+this helper should always be placed before reading `requiredLibraries` or `requiredIncludes`.
 
 Any properties or methods of `buildTask` may also be accessed directly (this object will delegate
 to `buildTask` for unknown properties and methods).
