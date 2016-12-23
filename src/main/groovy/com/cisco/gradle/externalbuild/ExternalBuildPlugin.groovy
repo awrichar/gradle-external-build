@@ -4,6 +4,8 @@ import com.cisco.gradle.externalbuild.context.BuildConfigContext
 import com.cisco.gradle.externalbuild.context.BuildOutputContext
 import com.cisco.gradle.externalbuild.internal.DefaultExternalNativeExecutableSpec
 import com.cisco.gradle.externalbuild.internal.DefaultExternalNativeLibrarySpec
+import com.cisco.gradle.externalbuild.internal.DefaultExternalNativeTestExecutableSpec
+import com.cisco.gradle.externalbuild.tasks.MultiOutputStream
 import org.gradle.api.Task
 import org.gradle.language.cpp.CppSourceSet
 import org.gradle.language.nativeplatform.tasks.AbstractNativeCompileTask
@@ -12,9 +14,12 @@ import org.gradle.model.Each
 import org.gradle.model.Finalize
 import org.gradle.model.Model
 import org.gradle.model.ModelMap
+import org.gradle.model.Path
 import org.gradle.model.RuleSource
 import org.gradle.nativeplatform.NativeBinarySpec
+import org.gradle.nativeplatform.tasks.InstallExecutable
 import org.gradle.nativeplatform.tasks.ObjectFilesToBinary
+import org.gradle.nativeplatform.test.tasks.RunTestExecutable
 import org.gradle.platform.base.BinaryTasks
 import org.gradle.platform.base.ComponentType
 import org.gradle.platform.base.TypeBuilder
@@ -23,8 +28,13 @@ class ExternalBuildPlugin extends RuleSource {
     public static final String EXTERNAL_SOURCE = 'externalSource'
     public static final String EXTERNAL_BUILD_TASK = 'externalBuild'
 
+    public static final String TEST_RUN_TASK = 'run'
+    public static final String TEST_RESULTS_DIR = 'test-results'
+    public static final String TEST_RESULTS_FILE = 'output.txt'
+
     static class ExternalBuildSpec {
-        Map<Task, NativeBinarySpec> buildTasks = [:]
+        private Map<Task, NativeBinarySpec> buildTasks = [:]
+        private Map<Task, NativeBinarySpec> runTasks = [:]
     }
 
     @Model
@@ -40,6 +50,11 @@ class ExternalBuildPlugin extends RuleSource {
     @ComponentType
     void registerExternalExecutableType(TypeBuilder<ExternalNativeExecutableSpec> builder) {
         builder.defaultImplementation(DefaultExternalNativeExecutableSpec)
+    }
+
+    @ComponentType
+    void registerExternalTestExecutableType(TypeBuilder<ExternalNativeTestExecutableSpec> builder) {
+        builder.defaultImplementation(DefaultExternalNativeTestExecutableSpec)
     }
 
     @Defaults
@@ -111,6 +126,47 @@ class ExternalBuildPlugin extends RuleSource {
         if (duplicateTask) {
             task.dependsOn(duplicateTask)
             task.enabled = false
+        }
+    }
+
+    @BinaryTasks
+    void createTestRunTasks(ModelMap<Task> tasks, NativeBinarySpec binary, ExternalBuildSpec build,
+                            @Path('buildDir') File buildDir, @Path('tasks.check') Task checkTask) {
+
+        if (!(binary.component in ExternalNativeTestExecutableSpec)) {
+            return
+        }
+
+        String runTaskName = binary.tasks.taskName(TEST_RUN_TASK)
+        File resultsDir = binary.namingScheme.getOutputDirectory(buildDir, TEST_RESULTS_DIR)
+        File resultsFile = new File(resultsDir, TEST_RESULTS_FILE)
+
+        // Create the run task
+        binary.tasks.create(runTaskName, RunTestExecutable) { RunTestExecutable runTask ->
+            build.runTasks[runTask] = binary
+            checkTask.dependsOn(runTask)
+
+            runTask.outputDir = resultsDir
+            runTask.doFirst {
+                resultsDir.mkdirs()
+                runTask.standardOutput = new MultiOutputStream(System.out, resultsFile.newOutputStream())
+            }
+        }
+    }
+
+    @Finalize
+    void configureTestRunTask(@Each RunTestExecutable runTask, ExternalBuildSpec build) {
+        if (!(runTask in build.runTasks)) {
+            return
+        }
+
+        NativeBinarySpec binary = build.runTasks[runTask]
+
+        // Set dependencies between the install task and the run task
+        binary.tasks.withType(InstallExecutable) { InstallExecutable installTask ->
+            runTask.dependsOn(installTask)
+            runTask.inputs.files(installTask)
+            runTask.executable = installTask.runScript
         }
     }
 }

@@ -1,0 +1,6 @@
+package com.cisco.gradle.externalbuild.internal
+
+import com.cisco.gradle.externalbuild.ExternalNativeTestExecutableSpec
+
+class DefaultExternalNativeTestExecutableSpec extends DefaultExternalNativeExecutableSpec implements ExternalNativeTestExecutableSpec {
+}

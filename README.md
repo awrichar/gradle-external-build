@@ -42,16 +42,18 @@ A Gradle plugin for seamlessly integrating with other build tools, including GNU
 
 This plugin includes 2 component types:
 
-* **ExternalNativeLibrarySpec** - derived from NativeLibrarySpec, for shared and/or static libraries built by an external tool
-* **ExternalNativeExecutableSpec** - derived from NativeExecutableSpec, for executables built by an external tool
+* **ExternalNativeLibrarySpec** - derived from NativeLibrarySpec, for shared and/or static libraries built by an external tool.
+* **ExternalNativeExecutableSpec** - derived from NativeExecutableSpec, for executables built by an external tool.
+* **ExternalNativeTestExecutableSpec** - identical to `ExternalNativeExecutableSpec`, but the built binary will also be executed
+as part of `gradle check`.
 
 It includes 5 task types:
 
-* **GnuMake** - for invoking makefiles
-* **AutoMake** - for invoking automake projects that use a configure script and a makefile
-* **CMake** - for invoking CMake projects
-* **QMake** - for invoking qmake projects
-* **OutputRedirectingExec** - a variant of Exec that redirects output to a file (the base class for all the above tasks; generally not intended for direct use)
+* **GnuMake** - for invoking makefiles.
+* **AutoMake** - for invoking automake projects that use a configure script and a makefile.
+* **CMake** - for building CMake projects.
+* **QMake** - for building Qt projects.
+* **OutputRedirectingExec** - a variant of Exec that redirects output to a file (the base class for all the above tasks; generally not intended for direct use).
 
 ## Syntax
 
