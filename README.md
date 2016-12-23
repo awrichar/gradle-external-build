@@ -13,12 +13,11 @@ A Gradle plugin for seamlessly integrating with other build tools, including GNU
     model {
         components {
             foo(ExternalNativeLibrarySpec) {
-                sources.c {
-                    lib project: ':bar', library: 'bar'
-                }
-                
                 buildConfig(GnuMake) {
                     targets 'all', 'install'
+
+                    lib project: ':bar', library: 'bar'
+
                     environment = [
                         'PATH': toolChainPath,
                         'OUTPUT_DIR': getOutputDir(it),
@@ -54,7 +53,9 @@ It includes 5 task types:
 * **QMake** - for invoking qmake projects
 * **OutputRedirectingExec** - a variant of Exec that redirects output to a file (the base class for all the above tasks; generally not intended for direct use)
 
-To trigger an external build, define a component using one of the component types:
+## Syntax
+
+Define a component using one of the provided component types:
 
     import com.cisco.gradle.externalbuild.ExternalNativeLibrarySpec
 
@@ -72,9 +73,7 @@ To trigger an external build, define a component using one of the component type
         }
     }
 
-## Syntax
-
-The components each have two methods to configure the external build - `buildConfig`
+The components each have two methods to configure the external build. `buildConfig`
 specifies the configuration for invoking the external build tool, and `buildOutput`
 specifies the output files from the build to expose to Gradle.
 
