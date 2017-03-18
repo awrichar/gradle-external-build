@@ -135,7 +135,7 @@ this helper should always be placed before reading `requiredLibraries` or `requi
 Any properties or methods of `buildTask` may also be accessed directly (this object will delegate
 to `buildTask` for unknown properties and methods).
 
-###BuildOutputContext
+### BuildOutputContext
 
 When a closure is provided to `buildOutput`, it will receive an instance of
 `BuildOutputContext` as its delegate and first parameter.
