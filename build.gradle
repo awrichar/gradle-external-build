@@ -1,10 +1,23 @@
 apply plugin: 'groovy'
 apply plugin: 'maven-publish'
+apply plugin: 'com.gradle.plugin-publish'
 
 def publishName = 'external-build'
 def homepageUrl = 'https://github.com/awrichar/gradle-external-build'
 group = 'com.cisco.gradle'
 version = '1.9'
+
+buildscript {
+    repositories {
+        maven {
+            url 'https://plugins.gradle.org/m2'
+        }
+    }
+
+    dependencies {
+        classpath 'com.gradle.publish:plugin-publish-plugin:0.9.7'
+    }
+}
 
 dependencies {
     compile localGroovy()
@@ -44,5 +57,19 @@ publishing {
 gradle.taskGraph.whenReady { graph ->
     if (graph.hasTask(':publish') && !publishUrl) {
         throw new GradleException('To publish, you must pass in -PpublishUrl (and optionally publishUser/publishPassword).')
+    }
+}
+
+pluginBundle {
+    website = homepageUrl
+    vcsUrl = homepageUrl
+    description = 'A Gradle plugin for seamlessly integrating with other build tools, including GNU make, CMake, qmake, and more.'
+    tags = ['native', 'make', 'automake', 'autoconf', 'cmake', 'qmake']
+
+    plugins {
+        externalBuildPlugin {
+            id = 'com.cisco.external-build'
+            displayName = 'Gradle external build plugin'
+        }
     }
 }
