@@ -1,0 +1,47 @@
+plugins {
+    id 'com.cisco.external-build' version '1.10'
+}
+
+import com.cisco.gradle.externalbuild.ExternalNativeExecutableSpec
+import com.cisco.gradle.externalbuild.tasks.CMake
+
+def getIntermediateDir = { binary ->
+    file("${buildDir}/external-build/${binary.component.name}/${binary.targetPlatform.name}")
+}
+
+def getInstallDir = { binary ->
+    file("${buildDir}/install/${binary.component.name}/${binary.targetPlatform.name}")
+}
+
+model {
+    components {
+        hello(ExternalNativeExecutableSpec) {
+            buildConfig(CMake) {
+                def intDir = getIntermediateDir(binary)
+                def outputDir = getInstallDir(binary)
+
+                // Uncomment for easier debugging
+                //redirectOutput = false
+
+                cmakeRoot '.'
+                cmakeArgs "-DCMAKE_INSTALL_PREFIX=${outputDir}"
+                targets 'all', 'install'
+
+                inputs.dir 'src'
+                inputs.file 'CMakeLists.txt'
+                outputs.dir outputDir
+
+                workingDir intDir
+                environment = [
+                    'PATH': toolChainPath,
+                ]
+            }
+
+            buildOutput {
+                def outputDir = getInstallDir(binary)
+                outputFile = file("${outputDir}/bin/hello")
+            }
+        }
+    }
+}
+
