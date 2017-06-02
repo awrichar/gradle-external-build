@@ -5,7 +5,7 @@ apply plugin: 'com.gradle.plugin-publish'
 def publishName = 'external-build'
 def homepageUrl = 'https://github.com/awrichar/gradle-external-build'
 group = 'com.cisco.gradle'
-version = '1.9'
+version = '1.10'
 
 buildscript {
     repositories {
