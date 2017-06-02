@@ -19,7 +19,7 @@ class CMake extends GnuMake {
         cmakeAction.args cmakeArgs
 
         if (cmakeRoot) {
-            cmakeAction.args << project.file(cmakeRoot).path
+            cmakeAction.args project.file(cmakeRoot).path
         }
 
         new OutputRedirector(this, 'cmake').redirect(cmakeAction, redirectOutput) {
