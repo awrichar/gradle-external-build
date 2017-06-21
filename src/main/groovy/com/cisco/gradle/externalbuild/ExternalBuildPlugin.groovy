@@ -99,13 +99,16 @@ class ExternalBuildPlugin implements Plugin<Project> {
             // Replace the create/link task with a simple copy
             binary.tasks.withType(ObjectFilesToBinary) { ObjectFilesToBinary mainTask ->
                 mainTask.deleteAllActions()
-                mainTask.inputs.file(outputContext.outputFile)
-                mainTask.doFirst {
-                    mainTask.project.copy {
-                        it.from outputContext.outputFile
-                        it.into mainTask.outputFile.parentFile
-                        it.rename { mainTask.outputFile.name }
-                        it.fileMode 0755
+
+                if (outputContext.outputFile != null) {
+                    mainTask.inputs.file(outputContext.outputFile)
+                    mainTask.doFirst {
+                        mainTask.project.copy {
+                            it.from outputContext.outputFile
+                            it.into mainTask.outputFile.parentFile
+                            it.rename { mainTask.outputFile.name }
+                            it.fileMode 0755
+                        }
                     }
                 }
             }
