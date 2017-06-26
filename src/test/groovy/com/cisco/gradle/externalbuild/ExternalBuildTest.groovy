@@ -29,12 +29,12 @@ class ExternalBuildTest extends Specification {
         outputFile = testProjectDir.newFile()
     }
 
-    BuildResult runBuild() {
-        return GradleRunner.create()
+    BuildResult runBuild(boolean succeed=true) {
+        GradleRunner runner = GradleRunner.create()
                 .withPluginClasspath()
                 .withProjectDir(testProjectDir.root)
                 .withArguments('build')
-                .build()
+        return succeed ? runner.build() : runner.buildAndFail()
     }
 
     String outputText(String component, String buildType) {
@@ -139,5 +139,119 @@ class ExternalBuildTest extends Specification {
         outputText('fooExecutable', 'cmake') == 'cmake-arg-1'
         outputText('fooExecutable', 'makeAll') == '-j 1 all'
         folderContents(testProjectDir.root, 'build/exe/foo') == ['foo']
+    }
+
+    def "two config blocks"() {
+        given:
+        buildFile << """
+            $pluginInit
+
+            model {
+                components {
+                    foo(ExternalNativeExecutableSpec) {
+                        buildConfig(GnuMake) {
+                            executable 'echo'
+                            jobs 1
+                            targets 'all'
+                            args 'make-arg-1'
+                        }
+
+                        buildConfig {
+                            args 'make-arg-2'
+                        }
+
+                        buildOutput {
+                            outputFile = file('${outputFile.path}')
+                        }
+                    }
+                }
+            }
+        """
+
+        when:
+        def result = runBuild()
+
+        then:
+        result.task(":build").outcome == SUCCESS
+        outputText('fooExecutable', 'makeAll') == 'make-arg-1 make-arg-2 -j 1 all'
+        folderContents(testProjectDir.root, 'build/exe/foo') == ['foo']
+    }
+
+    def "cannot set task type twice"() {
+        given:
+        buildFile << """
+            $pluginInit
+
+            model {
+                components {
+                    foo(ExternalNativeExecutableSpec) {
+                        buildConfig(GnuMake) {
+                            executable 'echo'
+                            jobs 1
+                            targets 'all'
+                            args 'make-arg-1'
+                        }
+
+                        buildConfig(CMake) {
+                            args 'make-arg-2'
+                        }
+
+                        buildOutput {
+                            outputFile = file('${outputFile.path}')
+                        }
+                    }
+                }
+            }
+        """
+
+        when:
+        def result = runBuild(false)
+
+        then:
+        result.tasks == []
+    }
+
+    def "inherited config"() {
+        given:
+        buildFile << """
+            $pluginInit
+
+            model {
+                components {
+                    foo(ExternalNativeExecutableSpec) {
+                        buildConfig(GnuMake) {
+                            executable 'echo'
+                            jobs 1
+                            targets 'all'
+                            args 'make-arg-1'
+                        }
+
+                        buildOutput {
+                            outputFile = file('${outputFile.path}')
+                        }
+                    }
+
+                    bar(ExternalNativeExecutableSpec) {
+                        buildConfig(\$.components.foo) {
+                            args 'make-arg-2'
+                        }
+
+                        buildOutput {
+                            outputFile = file('${outputFile.path}')
+                        }
+                    }
+                }
+            }
+        """
+
+        when:
+        def result = runBuild()
+
+        then:
+        result.task(":build").outcome == SUCCESS
+        outputText('fooExecutable', 'makeAll') == 'make-arg-1 -j 1 all'
+        outputText('barExecutable', 'makeAll') == 'make-arg-1 make-arg-2 -j 1 all'
+        folderContents(testProjectDir.root, 'build/exe/foo') == ['foo']
+        folderContents(testProjectDir.root, 'build/exe/bar') == ['bar']
     }
 }

@@ -4,26 +4,32 @@ import com.cisco.gradle.externalbuild.ExternalNativeComponentSpec
 import com.cisco.gradle.externalbuild.ExternalNativeLibrarySpec
 import com.cisco.gradle.externalbuild.context.BuildConfigContext
 import com.cisco.gradle.externalbuild.context.BuildOutputContext
-import com.cisco.gradle.externalbuild.tasks.OutputRedirectingExec
 import org.gradle.api.Action
+import org.gradle.api.GradleException
 import org.gradle.api.Task
 import org.gradle.api.internal.ClosureBackedAction
 import org.gradle.internal.Actions
 import org.gradle.nativeplatform.internal.DefaultNativeLibrarySpec
 
 class DefaultExternalNativeLibrarySpec extends DefaultNativeLibrarySpec implements ExternalNativeLibrarySpec {
-    private Class<Task> buildTaskType = OutputRedirectingExec
-    private Action<BuildConfigContext> buildConfigAction = {}
-    private Action<BuildOutputContext> buildOutputAction = {}
+    private Class<Task> buildTaskType
+    private List<Action<BuildConfigContext>> buildConfigActions = []
+    private List<Action<BuildOutputContext>> buildOutputActions = []
+
+    private verifyTaskTypeNotSet() {
+        if (buildTaskType != null) {
+            throw new GradleException("Task type is already set to ${buildTaskType}; cannot set it again!")
+        }
+    }
 
     @Override
     Action<BuildConfigContext> getBuildConfig() {
-        return buildConfigAction
+        return Actions.composite(buildConfigActions)
     }
 
     @Override
     void buildConfig(Action<BuildConfigContext> action) {
-        buildConfigAction = action
+        buildConfigActions << action
     }
 
     @Override
@@ -33,8 +39,9 @@ class DefaultExternalNativeLibrarySpec extends DefaultNativeLibrarySpec implemen
 
     @Override
     void buildConfig(Class<Task> actionType, Action<BuildConfigContext> action) {
+        verifyTaskTypeNotSet()
         buildTaskType = actionType
-        buildConfigAction = action
+        buildConfigActions << action
     }
 
     @Override
@@ -44,14 +51,16 @@ class DefaultExternalNativeLibrarySpec extends DefaultNativeLibrarySpec implemen
 
     @Override
     void buildConfig(ExternalNativeComponentSpec component) {
+        verifyTaskTypeNotSet()
         buildTaskType = component.buildTaskType
-        buildConfigAction = component.buildConfig
+        buildConfigActions << component.buildConfig
     }
 
     @Override
     void buildConfig(ExternalNativeComponentSpec component, Action<BuildConfigContext> action) {
+        verifyTaskTypeNotSet()
         buildTaskType = component.buildTaskType
-        buildConfigAction = Actions.composite(component.buildConfig, action)
+        buildConfigActions << component.buildConfig << action
     }
 
     @Override
@@ -66,12 +75,12 @@ class DefaultExternalNativeLibrarySpec extends DefaultNativeLibrarySpec implemen
 
     @Override
     Action<BuildOutputContext> getBuildOutput() {
-        return buildOutputAction
+        return Actions.composite(buildOutputActions)
     }
 
     @Override
     void buildOutput(Action<BuildOutputContext> action) {
-        buildOutputAction = action
+        buildOutputActions << action
     }
 
     @Override

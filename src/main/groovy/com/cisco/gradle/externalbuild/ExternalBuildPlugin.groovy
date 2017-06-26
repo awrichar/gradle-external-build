@@ -6,6 +6,7 @@ import com.cisco.gradle.externalbuild.internal.DefaultExternalNativeExecutableSp
 import com.cisco.gradle.externalbuild.internal.DefaultExternalNativeLibrarySpec
 import com.cisco.gradle.externalbuild.internal.DefaultExternalNativeTestExecutableSpec
 import com.cisco.gradle.externalbuild.tasks.MultiOutputStream
+import com.cisco.gradle.externalbuild.tasks.OutputRedirectingExec
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -82,7 +83,8 @@ class ExternalBuildPlugin implements Plugin<Project> {
             CppSourceSet externalSource = binary.sources.get(EXTERNAL_SOURCE) as CppSourceSet
 
             // Create the external build task
-            tasks.create(binary.tasks.taskName(EXTERNAL_BUILD_TASK), component.buildTaskType) { Task buildTask ->
+            Class<Task> taskType = component.buildTaskType ?: OutputRedirectingExec
+            tasks.create(binary.tasks.taskName(EXTERNAL_BUILD_TASK), taskType) { Task buildTask ->
                 build.buildTasks[buildTask] = binary
                 externalSource.builtBy(buildTask)
             }
