@@ -4,15 +4,16 @@ import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
+import spock.lang.Shared
 import spock.lang.Specification
 
-import static org.gradle.testkit.runner.TaskOutcome.FAILED
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
 class ExternalBuildTest extends Specification {
     @Rule final TemporaryFolder testProjectDir = new TemporaryFolder()
+    @Shared File stubLibrary
+    @Shared File stubExecutable
     File buildFile
-    File outputFile
 
     static final String pluginInit = """
         plugins {
@@ -25,9 +26,22 @@ class ExternalBuildTest extends Specification {
         import com.cisco.gradle.externalbuild.tasks.GnuMake
     """
 
+    def setupSpec() {
+        GradleRunner.create()
+                .withProjectDir(new File('testStub'))
+                .withArguments('build')
+                .build()
+
+        stubLibrary = firstFile('testStub/build/libs/stubLibrary/shared')
+        stubExecutable = firstFile('testStub/build/exe/stubExecutable')
+    }
+
     def setup() {
         buildFile = testProjectDir.newFile('build.gradle')
-        outputFile = testProjectDir.newFile()
+    }
+
+    File firstFile(String folderName) {
+        return new File(folderName).listFiles().first()
     }
 
     BuildResult runBuild(boolean succeed=true) {
@@ -35,6 +49,7 @@ class ExternalBuildTest extends Specification {
                 .withPluginClasspath()
                 .withProjectDir(testProjectDir.root)
                 .withArguments('build')
+
         return succeed ? runner.build() : runner.buildAndFail()
     }
 
@@ -95,7 +110,7 @@ class ExternalBuildTest extends Specification {
                         }
 
                         buildOutput {
-                            outputFile = file('${outputFile.path}')
+                            outputFile = file('${stubExecutable.absolutePath}')
                         }
                     }
                 }
@@ -109,7 +124,7 @@ class ExternalBuildTest extends Specification {
         result.task(":build").outcome == SUCCESS
         outputText('fooExecutable', 'makeAll') == 'make-arg-1 -j 1 all'
         outputText('fooExecutable', 'makeInstall') == 'make-arg-1 -j 1 install'
-        folderContents(testProjectDir.root, 'build/exe/foo') == ['foo']
+        folderContents(testProjectDir.root, 'build/exe/foo').size() > 0
     }
 
     def "basic cmake"() {
@@ -129,7 +144,7 @@ class ExternalBuildTest extends Specification {
                         }
 
                         buildOutput {
-                            outputFile = file('${outputFile.path}')
+                            outputFile = file('${stubExecutable.absolutePath}')
                         }
                     }
                 }
@@ -143,7 +158,7 @@ class ExternalBuildTest extends Specification {
         result.task(":build").outcome == SUCCESS
         outputText('fooExecutable', 'cmake') == 'cmake-arg-1'
         outputText('fooExecutable', 'makeAll') == '-j 1 all'
-        folderContents(testProjectDir.root, 'build/exe/foo') == ['foo']
+        folderContents(testProjectDir.root, 'build/exe/foo').size() > 0
     }
 
     def "two config blocks"() {
@@ -166,7 +181,7 @@ class ExternalBuildTest extends Specification {
                         }
 
                         buildOutput {
-                            outputFile = file('${outputFile.path}')
+                            outputFile = file('${stubExecutable.absolutePath}')
                         }
                     }
                 }
@@ -179,7 +194,7 @@ class ExternalBuildTest extends Specification {
         then:
         result.task(":build").outcome == SUCCESS
         outputText('fooExecutable', 'makeAll') == 'make-arg-1 make-arg-2 -j 1 all'
-        folderContents(testProjectDir.root, 'build/exe/foo') == ['foo']
+        folderContents(testProjectDir.root, 'build/exe/foo').size() > 0
     }
 
     def "cannot set task type twice"() {
@@ -202,7 +217,7 @@ class ExternalBuildTest extends Specification {
                         }
 
                         buildOutput {
-                            outputFile = file('${outputFile.path}')
+                            outputFile = file('${stubExecutable.absolutePath}')
                         }
                     }
                 }
@@ -232,7 +247,7 @@ class ExternalBuildTest extends Specification {
                         }
 
                         buildOutput {
-                            outputFile = file('${outputFile.path}')
+                            outputFile = file('${stubExecutable.absolutePath}')
                         }
                     }
 
@@ -242,7 +257,7 @@ class ExternalBuildTest extends Specification {
                         }
 
                         buildOutput {
-                            outputFile = file('${outputFile.path}')
+                            outputFile = file('${stubExecutable.absolutePath}')
                         }
                     }
                 }
@@ -256,8 +271,8 @@ class ExternalBuildTest extends Specification {
         result.task(":build").outcome == SUCCESS
         outputText('fooExecutable', 'makeAll') == 'make-arg-1 -j 1 all'
         outputText('barExecutable', 'makeAll') == 'make-arg-1 make-arg-2 -j 1 all'
-        folderContents(testProjectDir.root, 'build/exe/foo') == ['foo']
-        folderContents(testProjectDir.root, 'build/exe/bar') == ['bar']
+        folderContents(testProjectDir.root, 'build/exe/foo').size() > 0
+        folderContents(testProjectDir.root, 'build/exe/bar').size() > 0
     }
 
     def "external executable depends on Gradle library"() {
@@ -272,11 +287,12 @@ class ExternalBuildTest extends Specification {
                             lib library: 'bar'
 
                             executable 'echo'
-                            args(*requiredLibraries)
+                            jobs 1
+                            args requiredLibraries*.canonicalPath
                         }
 
                         buildOutput {
-                            outputFile = file('${outputFile.path}')
+                            outputFile = file('${stubExecutable.absolutePath}')
                         }
                     }
 
@@ -299,11 +315,12 @@ class ExternalBuildTest extends Specification {
 
         when:
         def result = runBuild()
+        File barLibrary = firstFile("${testProjectDir.root}/build/libs/bar/shared")
 
         then:
         result.task(":build").outcome == SUCCESS
-        outputText('fooExecutable').contains('libbar.so')
-        folderContents(testProjectDir.root, 'build/exe/foo') == ['foo']
+        outputText('fooExecutable') == "${barLibrary.canonicalPath} -j 1"
+        folderContents(testProjectDir.root, 'build/exe/foo').size() > 0
     }
 
     def "Gradle executable depends on external library"() {
@@ -319,7 +336,7 @@ class ExternalBuildTest extends Specification {
                         }
 
                         buildOutput {
-                            outputFile = file('${outputFile.path}')
+                            outputFile = file('${stubLibrary.absolutePath}')
                         }
                     }
 
@@ -343,12 +360,13 @@ class ExternalBuildTest extends Specification {
         srcFile.text = "int main() { return 0; }"
 
         when:
-        def result = runBuild(false)
+        def result = runBuild()
+        File fooLibrary = firstFile("${testProjectDir.root}/build/libs/foo/shared")
+        File optionsFile = new File(testProjectDir.root, 'build/tmp/linkBarExecutable/options.txt')
 
         then:
-        result.task(":fooSharedLibrary").outcome == SUCCESS
-        result.task(":linkBarExecutable").outcome == FAILED
-        result.output.contains('libfoo.so')
-        folderContents(testProjectDir.root, 'build/libs/foo/shared') == ['libfoo.so']
+        result.task(":build").outcome == SUCCESS
+        optionsFile.text.contains(fooLibrary.canonicalPath)
+        folderContents(testProjectDir.root, 'build/libs/foo/shared').size() > 0
     }
 }

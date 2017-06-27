@@ -1,0 +1,8 @@
+apply plugin: 'cpp'
+
+model {
+    components {
+        stubLibrary(NativeLibrarySpec)
+        stubExecutable(NativeExecutableSpec)
+    }
+}
