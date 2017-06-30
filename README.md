@@ -37,10 +37,12 @@ A Gradle plugin for seamlessly integrating with other build tools, including GNU
             }
         }
     }
-    
+
+See the `examples` directory for additional examples.
+
 ## Overview
 
-This plugin includes 2 component types:
+This plugin includes 3 component types:
 
 * **ExternalNativeLibrarySpec** - derived from NativeLibrarySpec, for shared and/or static libraries built by an external tool.
 * **ExternalNativeExecutableSpec** - derived from NativeExecutableSpec, for executables built by an external tool.
