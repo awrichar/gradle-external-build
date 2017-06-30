@@ -1,0 +1,57 @@
+/**
+ * Publish a plugin to a local Maven repository.
+ *
+ * The following should be set on the project:
+ *   - group - the group name
+ *   - version - the version number
+ *   - ext.publishName - the artifact name
+ *   - ext.publishHomepage (optional) - the author's homepage
+ *
+ * The following should be passed in from environment or command line:
+ *   - ext.publishUrl - the Maven repository URL
+ *   - ext.publishUser (optional) - the Maven repository user name
+ *   - ext.publishPassword (optional) - the Maven repository password
+ */
+apply plugin: 'maven-publish'
+
+ext {
+    if (!project.hasProperty('publishUrl')) publishUrl = null
+    if (!project.hasProperty('publishUser')) publishUser = null
+    if (!project.hasProperty('publishPassword')) publishPassword = null
+    if (!project.hasProperty('publishHomepage')) publishHomepage = null
+}
+
+publishing {
+    repositories {
+        maven {
+            url = publishUrl
+            credentials {
+                username publishUser
+                password publishPassword
+            }
+        }
+    }
+
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            artifactId = publishName
+            if (publishHomepage) {
+                pom.withXml {
+                    asNode().appendNode('url', publishHomepage)
+                }
+            }
+        }
+    }
+}
+
+gradle.taskGraph.whenReady { graph ->
+    if (!project.hasProperty('publishName')) {
+        throw new GradleException('project.publishName was not set.')
+    }
+
+    if (graph.hasTask(':publish') && !publishUrl) {
+        throw new GradleException('To publish, you must pass in -PpublishUrl (and optionally publishUser/publishPassword).')
+    }
+}
+

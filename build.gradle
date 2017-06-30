@@ -1,12 +1,17 @@
 apply plugin: 'groovy'
 apply plugin: 'java-gradle-plugin'
-apply plugin: 'maven-publish'
 apply plugin: 'com.gradle.plugin-publish'
+apply from: 'localPublish.gradle'
 
-def publishName = 'external-build'
-def homepageUrl = 'https://github.com/awrichar/gradle-external-build'
 group = 'com.cisco.gradle'
 version = '1.10'
+
+ext {
+    publishName = 'external-build'
+    publishHomepage = 'https://github.com/awrichar/gradle-external-build'
+}
+
+targetCompatibility = '1.6'
 
 buildscript {
     repositories {
@@ -44,45 +49,9 @@ test {
     }
 }
 
-ext {
-    if (!project.hasProperty('publishUrl')) publishUrl = null
-    if (!project.hasProperty('publishUser')) publishUser = null
-    if (!project.hasProperty('publishPassword')) publishPassword = null
-}
-
-targetCompatibility = '1.6'
-
-publishing {
-    repositories {
-        maven {
-            url = publishUrl
-            credentials {
-                username publishUser
-                password publishPassword
-            }
-        }
-    }
-
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
-            artifactId = publishName
-            pom.withXml {
-                asNode().appendNode('url', homepageUrl)
-            }
-        }
-    }
-}
-
-gradle.taskGraph.whenReady { graph ->
-    if (graph.hasTask(':publish') && !publishUrl) {
-        throw new GradleException('To publish, you must pass in -PpublishUrl (and optionally publishUser/publishPassword).')
-    }
-}
-
 pluginBundle {
-    website = homepageUrl
-    vcsUrl = homepageUrl
+    website = publishHomepage
+    vcsUrl = publishHomepage
     description = 'A Gradle plugin for seamlessly integrating with other build tools, including GNU make, CMake, qmake, and more.'
     tags = ['native', 'make', 'automake', 'autoconf', 'cmake', 'qmake']
 
