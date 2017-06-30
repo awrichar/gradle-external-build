@@ -33,6 +33,11 @@ dependencies {
     }
 }
 
+task buildExamples(type: GradleBuild) {
+    dir 'examples'
+    tasks = ['build']
+}
+
 test {
     testLogging {
         exceptionFormat = 'full'
