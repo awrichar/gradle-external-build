@@ -12,6 +12,7 @@ import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.language.cpp.CppSourceSet
 import org.gradle.language.nativeplatform.tasks.AbstractNativeCompileTask
+import org.gradle.api.logging.Logger
 import org.gradle.model.Defaults
 import org.gradle.model.Each
 import org.gradle.model.Finalize
@@ -20,6 +21,9 @@ import org.gradle.model.ModelMap
 import org.gradle.model.Path
 import org.gradle.model.RuleSource
 import org.gradle.nativeplatform.NativeBinarySpec
+import org.gradle.nativeplatform.NativeExecutableBinarySpec
+import org.gradle.nativeplatform.SharedLibraryBinarySpec
+import org.gradle.nativeplatform.StaticLibraryBinarySpec
 import org.gradle.nativeplatform.tasks.InstallExecutable
 import org.gradle.nativeplatform.tasks.ObjectFilesToBinary
 import org.gradle.nativeplatform.test.tasks.RunTestExecutable
@@ -137,8 +141,16 @@ class ExternalBuildPlugin implements Plugin<Project> {
                 binary != otherBinary && task.equals(otherTask) && otherTask.enabled
             }?.key
             if (duplicateTask) {
-                task.dependsOn(duplicateTask)
-                task.enabled = false
+                // Always keep the first task (alphabetically) enabled, and disable others
+                if (task.name < duplicateTask.name) {
+                    task.logger.info("Disabling ${duplicateTask.name} (duplicate of ${task.name})")
+                    duplicateTask.dependsOn(task)
+                    duplicateTask.enabled = false
+                } else {
+                    task.logger.info("Disabling ${task.name} (duplicate of ${duplicateTask.name})")
+                    task.dependsOn(duplicateTask)
+                    task.enabled = false
+                }
             }
         }
 
