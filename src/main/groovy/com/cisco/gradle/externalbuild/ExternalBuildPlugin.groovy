@@ -102,6 +102,11 @@ class ExternalBuildPlugin implements Plugin<Project> {
                 it.enabled = false
             }
 
+            // Preserve the name of the selected output file
+            if (outputContext.outputFile != null) {
+                renameOutputFile(binary, outputContext.outputFile.name)
+            }
+
             // Replace the create/link task with a simple copy
             binary.tasks.withType(ObjectFilesToBinary) { ObjectFilesToBinary mainTask ->
                 mainTask.deleteAllActions()
@@ -112,7 +117,6 @@ class ExternalBuildPlugin implements Plugin<Project> {
                         mainTask.project.copy {
                             it.from outputContext.outputFile
                             it.into mainTask.outputFile.parentFile
-                            it.rename { mainTask.outputFile.name }
                             it.fileMode 0755
                         }
                     }
@@ -192,6 +196,23 @@ class ExternalBuildPlugin implements Plugin<Project> {
                 runTask.dependsOn(installTask)
                 runTask.inputs.files(installTask)
                 runTask.executable = installTask.runScript
+            }
+        }
+
+        private void renameOutputFile(NativeBinarySpec binarySpec, String name) {
+            if (binarySpec in SharedLibraryBinarySpec) {
+                File folder = binarySpec.sharedLibraryFile.parentFile
+                binarySpec.sharedLibraryFile = new File(folder, name)
+                // TODO: Windows might need to treat this differently
+                binarySpec.sharedLibraryLinkFile = binarySpec.sharedLibraryFile
+            } else if (binarySpec in StaticLibraryBinarySpec) {
+                File folder = binarySpec.staticLibraryFile.parentFile
+                binarySpec.staticLibraryFile = new File(folder, name)
+            } else if (binarySpec in NativeExecutableBinarySpec) {
+                File folder = binarySpec.executable.file.parentFile
+                binarySpec.executable.file = new File(folder, name)
+            } else {
+                throw new IllegalArgumentException("Unsupported binary type: ${binarySpec.class.name}")
             }
         }
     }
