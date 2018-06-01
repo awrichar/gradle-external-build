@@ -1,10 +1,11 @@
 package com.cisco.gradle.externalbuild.tasks
 
+import org.gradle.api.tasks.Console
 import org.gradle.api.tasks.Exec
 import org.gradle.process.internal.ExecAction
 
 class OutputRedirectingExec extends Exec {
-    boolean redirectOutput = true
+    @Console boolean redirectOutput = true
 
     @Override
     protected void exec() {

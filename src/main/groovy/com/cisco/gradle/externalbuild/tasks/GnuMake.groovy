@@ -1,11 +1,15 @@
 package com.cisco.gradle.externalbuild.tasks
 
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Optional
 import org.gradle.process.internal.ExecAction
 
 class GnuMake extends OutputRedirectingExec {
-    Object makefile
-    int jobs
-    List<String> targets = []
+    @InputFile @Optional File makefile
+    @Internal int jobs
+    @Input @Optional List<String> targets = []
 
     public GnuMake() {
         executable 'make'
@@ -19,7 +23,7 @@ class GnuMake extends OutputRedirectingExec {
         }
 
         if (makefile) {
-            args = ['-f', project.file(makefile).path] + args
+            args = ['-f', makefile.path] + args
         }
 
         args '-j', jobs
@@ -46,7 +50,7 @@ class GnuMake extends OutputRedirectingExec {
     }
 
     void makefile(Object makefile) {
-        this.makefile = makefile
+        this.makefile = project.file(makefile)
     }
 
     void targets(String... args) {

@@ -1,11 +1,14 @@
 package com.cisco.gradle.externalbuild.tasks
 
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputDirectory
+import org.gradle.api.tasks.Optional
 import org.gradle.process.internal.ExecAction
 
 class CMake extends GnuMake {
-    Object cmakeExecutable = 'cmake'
-    List<Object> cmakeArgs = []
-    Object cmakeRoot
+    @Input Object cmakeExecutable = 'cmake'
+    @Input List<Object> cmakeArgs = []
+    @InputDirectory @Optional File cmakeRoot
 
     @Override
     protected void exec() {
@@ -19,7 +22,7 @@ class CMake extends GnuMake {
         cmakeAction.args cmakeArgs
 
         if (cmakeRoot) {
-            cmakeAction.args project.file(cmakeRoot).path
+            cmakeAction.args cmakeRoot.path
         }
 
         new OutputRedirector(this, 'cmake').redirect(cmakeAction, redirectOutput) {
@@ -47,6 +50,6 @@ class CMake extends GnuMake {
     }
 
     void cmakeRoot(Object rootFolder) {
-        cmakeRoot = rootFolder
+        cmakeRoot = project.file(rootFolder)
     }
 }

@@ -1,11 +1,14 @@
 package com.cisco.gradle.externalbuild.tasks
 
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.Optional
 import org.gradle.process.internal.ExecAction
 
 class QMake extends GnuMake {
-    String qmakeExecutable = 'qmake'
-    List<Object> qmakeArgs = []
-    Object qmakeProject
+    @Input String qmakeExecutable = 'qmake'
+    @Input List<Object> qmakeArgs = []
+    @InputFile @Optional File qmakeProject
 
     @Override
     protected void exec() {
@@ -20,7 +23,7 @@ class QMake extends GnuMake {
         qmakeAction.workingDir = workingDir
 
         if (qmakeProject) {
-            qmakeAction.args(project.file(qmakeProject).path)
+            qmakeAction.args(qmakeProject.path)
         }
 
         new OutputRedirector(this, 'qmake').redirect(qmakeAction, redirectOutput) {
@@ -48,6 +51,6 @@ class QMake extends GnuMake {
     }
 
     void qmakeProject(Object projectFile) {
-        qmakeProject = projectFile
+        qmakeProject = project.file(projectFile)
     }
 }

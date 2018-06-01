@@ -1,12 +1,16 @@
 package com.cisco.gradle.externalbuild.tasks
 
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.OutputDirectory
 import org.gradle.process.internal.ExecAction
 
 class AutoMake extends GnuMake {
-    Object configureExecutable = project.file('configure')
-    List<Object> configureArgs = []
-    String crossCompileHost
-    Object installPrefix
+    @InputFile File configureExecutable = project.file('configure')
+    @Input List<Object> configureArgs = []
+    @Input @Optional String crossCompileHost
+    @OutputDirectory @Optional File installPrefix
 
     @Override
     protected void exec() {
@@ -15,7 +19,7 @@ class AutoMake extends GnuMake {
         }
 
         if (installPrefix) {
-            project.file(installPrefix).mkdirs()
+            installPrefix.mkdirs()
         }
 
         ExecAction configureAction = newSubAction()
@@ -50,7 +54,7 @@ class AutoMake extends GnuMake {
     }
 
     void configureExecutable(Object executable) {
-        configureExecutable = executable
+        configureExecutable = project.file(executable)
     }
 
     void configureArgs(Object... args) {
@@ -62,6 +66,6 @@ class AutoMake extends GnuMake {
     }
 
     void installPrefix(Object prefix) {
-        installPrefix = prefix
+        installPrefix = project.file(prefix)
     }
 }
