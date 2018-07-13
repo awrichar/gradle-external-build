@@ -41,7 +41,7 @@ class ExternalBuildPlugin implements Plugin<Project> {
 
     @Override
     public void apply(final Project project) {
-        project.getPluginManager().apply('cpp');
+        project.getPluginManager().apply('cpp')
     }
 
     static class ExternalBuildSpec {
@@ -112,11 +112,22 @@ class ExternalBuildPlugin implements Plugin<Project> {
                 mainTask.deleteAllActions()
 
                 if (outputContext.outputFile != null) {
-                    mainTask.inputs.file(outputContext.outputFile)
+                    mainTask.source(outputContext.outputFile)
+
+                    File linkedFile
+                    if (mainTask.hasProperty('outputFile') && mainTask.outputFile in File) {
+                        // for backwards compatibility
+                        linkedFile = mainTask.outputFile
+                    } else if (mainTask.hasProperty('outputFile')) {
+                        linkedFile = mainTask.outputFile.asFile.get()
+                    } else {
+                        linkedFile = mainTask.linkedFile.asFile.get()
+                    }
+
                     mainTask.doFirst {
                         mainTask.project.copy {
                             it.from outputContext.outputFile
-                            it.into mainTask.outputFile.parentFile
+                            it.into linkedFile.parentFile
                             it.fileMode 0755
                         }
                     }
@@ -195,7 +206,12 @@ class ExternalBuildPlugin implements Plugin<Project> {
             binary.tasks.withType(InstallExecutable) { InstallExecutable installTask ->
                 runTask.dependsOn(installTask)
                 runTask.inputs.files(installTask)
-                runTask.executable = installTask.runScript
+                if (installTask.hasProperty('runScript')) {
+                    // for backwards compatibility
+                    runTask.executable(installTask.runScript)
+                } else {
+                    runTask.executable(installTask.runScriptFile.get())
+                }
             }
         }
 

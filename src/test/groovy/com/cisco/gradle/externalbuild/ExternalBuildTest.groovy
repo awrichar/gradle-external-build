@@ -369,4 +369,6 @@ class ExternalBuildTest extends Specification {
         optionsFile.text.contains(fooLibrary.canonicalPath)
         folderContents(testProjectDir.root, 'build/libs/foo/shared').size() > 0
     }
+
+    // TODO: add tests for ExternalNativeTestExecutableSpec!
 }
