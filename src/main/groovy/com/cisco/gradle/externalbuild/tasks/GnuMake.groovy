@@ -22,6 +22,9 @@ class GnuMake extends OutputRedirectingExec {
             workingDir.mkdirs()
         }
 
+        List<String> origArgs = []
+        origArgs.addAll(args)
+
         if (makefile) {
             args = ['-f', makefile.path] + args
         }
@@ -40,6 +43,8 @@ class GnuMake extends OutputRedirectingExec {
         } else {
             super.exec()
         }
+
+        args = origArgs
     }
 
     @Override

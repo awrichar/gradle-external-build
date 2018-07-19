@@ -8,6 +8,7 @@ import spock.lang.Shared
 import spock.lang.Specification
 
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
+import static org.gradle.testkit.runner.TaskOutcome.UP_TO_DATE
 
 class ExternalBuildTest extends Specification {
     @Rule final TemporaryFolder testProjectDir = new TemporaryFolder()
@@ -90,7 +91,7 @@ class ExternalBuildTest extends Specification {
         def result = runBuild()
 
         then:
-        result.task(":build").outcome == SUCCESS
+        result.task(":build").outcome == UP_TO_DATE
         folderContents(testProjectDir.root, 'build/exe/foo') == null
     }
 
@@ -370,5 +371,48 @@ class ExternalBuildTest extends Specification {
         folderContents(testProjectDir.root, 'build/libs/foo/shared').size() > 0
     }
 
+    def "Task de-duplication"() {
+        given:
+        buildFile << """
+            $pluginInit
+
+            model {
+                components {
+                    foo(ExternalNativeLibrarySpec) {
+                        buildConfig(GnuMake) {
+                            executable 'echo'
+                            doFirst {
+                                println "Running build"
+                            }
+                        }
+
+                        buildOutput {
+                            outputFile = file('${stubLibrary.absolutePath}')
+                        }
+                    }
+
+                    bar(ExternalNativeLibrarySpec) {
+                        buildConfig(\$.components.foo)
+                        buildOutput {
+                            outputFile = file('${stubLibrary.absolutePath}')
+                        }
+                    }
+                }
+            }
+        """
+
+        when:
+        def result = runBuild()
+
+        then:
+        result.task(":build").outcome == SUCCESS
+        result.task(":externalBuildFooSharedLibrary").outcome == SUCCESS
+        result.task(":externalBuildFooStaticLibrary").outcome == SUCCESS
+        result.task(":externalBuildBarSharedLibrary").outcome == SUCCESS
+        result.task(":externalBuildBarStaticLibrary").outcome == SUCCESS
+        result.output.count("Running build") == 1
+    }
+
     // TODO: add tests for ExternalNativeTestExecutableSpec!
+    // TODO: add tests for dependencies across projects!
 }
