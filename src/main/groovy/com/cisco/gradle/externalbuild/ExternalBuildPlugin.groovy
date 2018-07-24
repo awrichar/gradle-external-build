@@ -238,7 +238,7 @@ class ExternalBuildPlugin implements Plugin<Project> {
                 // for backwards compatibility
                 return task.runScript
             } else {
-                return task.runScriptFile.get()
+                return task.runScriptFile.get().asFile
             }
         }
 

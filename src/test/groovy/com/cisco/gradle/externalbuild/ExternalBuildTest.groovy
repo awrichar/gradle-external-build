@@ -23,8 +23,10 @@ class ExternalBuildTest extends Specification {
 
         import com.cisco.gradle.externalbuild.ExternalNativeExecutableSpec
         import com.cisco.gradle.externalbuild.ExternalNativeLibrarySpec
+        import com.cisco.gradle.externalbuild.ExternalNativeTestExecutableSpec
         import com.cisco.gradle.externalbuild.tasks.CMake
         import com.cisco.gradle.externalbuild.tasks.GnuMake
+        import com.cisco.gradle.externalbuild.tasks.QMake
     """
 
     def setupSpec() {
@@ -130,6 +132,7 @@ class ExternalBuildTest extends Specification {
 
     def "basic cmake"() {
         given:
+        def cmakeFolder = testProjectDir.newFolder('cmake-folder')
         buildFile << """
             $pluginInit
 
@@ -142,6 +145,7 @@ class ExternalBuildTest extends Specification {
                             targets 'all'
                             cmakeExecutable 'echo'
                             cmakeArgs 'cmake-arg-1'
+                            cmakeRoot 'cmake-folder'
                         }
 
                         buildOutput {
@@ -157,7 +161,43 @@ class ExternalBuildTest extends Specification {
 
         then:
         result.task(":build").outcome == SUCCESS
-        outputText('fooExecutable', 'cmake') == 'cmake-arg-1'
+        outputText('fooExecutable', 'cmake') == "cmake-arg-1 ${cmakeFolder}"
+        outputText('fooExecutable', 'makeAll') == '-j 1 all'
+        folderContents(testProjectDir.root, 'build/exe/foo').size() > 0
+    }
+
+    def "basic qmake"() {
+        given:
+        def projectFile = testProjectDir.newFile('test.pro')
+        buildFile << """
+            $pluginInit
+
+            model {
+                components {
+                    foo(ExternalNativeExecutableSpec) {
+                        buildConfig(QMake) {
+                            executable 'echo'
+                            jobs 1
+                            targets 'all'
+                            qmakeExecutable 'echo'
+                            qmakeArgs 'qmake-arg-1'
+                            qmakeProject 'test.pro'
+                        }
+
+                        buildOutput {
+                            outputFile = file('${stubExecutable.absolutePath}')
+                        }
+                    }
+                }
+            }
+        """
+
+        when:
+        def result = runBuild()
+
+        then:
+        result.task(":build").outcome == SUCCESS
+        outputText('fooExecutable', 'qmake') == "qmake-arg-1 ${projectFile}"
         outputText('fooExecutable', 'makeAll') == '-j 1 all'
         folderContents(testProjectDir.root, 'build/exe/foo').size() > 0
     }
@@ -413,6 +453,109 @@ class ExternalBuildTest extends Specification {
         result.output.count("Running build") == 1
     }
 
-    // TODO: add tests for ExternalNativeTestExecutableSpec!
-    // TODO: add tests for dependencies across projects!
+    def "build tests"() {
+        given:
+        buildFile << """
+            $pluginInit
+
+            model {
+                components {
+                    foo(ExternalNativeTestExecutableSpec) {
+                        buildConfig(GnuMake) {
+                            executable 'echo'
+                            jobs 1
+                            targets 'all', 'install'
+                            args 'make-arg-1'
+                        }
+
+                        buildOutput {
+                            outputFile = file('${stubExecutable.absolutePath}')
+                        }
+                    }
+                }
+            }
+        """
+
+        when:
+        def result = runBuild()
+
+        then:
+        result.task(":build").outcome == SUCCESS
+        result.task(":installFooExecutable").outcome == SUCCESS
+        result.task(":runFooExecutable").outcome == SUCCESS
+        outputText('fooExecutable', 'makeAll') == 'make-arg-1 -j 1 all'
+        outputText('fooExecutable', 'makeInstall') == 'make-arg-1 -j 1 install'
+        folderContents(testProjectDir.root, 'build/exe/foo').size() > 0
+    }
+
+    def "Cross-project dependencies"() {
+        given:
+        def project1Folder = testProjectDir.newFolder('project1')
+        def project2Folder = testProjectDir.newFolder('project2')
+        def settingsFile = testProjectDir.newFile('settings.gradle')
+        settingsFile.text = "include(':project1', ':project2')"
+
+        def project1BuildFile = new File(project1Folder, 'build.gradle')
+        project1BuildFile << """
+            $pluginInit
+
+            model {
+                components {
+                    foo(ExternalNativeLibrarySpec) {
+                        buildConfig(GnuMake) {
+                            executable 'echo'
+                        }
+
+                        buildOutput {
+                            outputFile = file('${stubLibrary.absolutePath}')
+                        }
+                    }
+
+                    foo2(ExternalNativeLibrarySpec) {
+                        buildConfig(\$.components.foo)
+                        buildOutput {
+                            outputFile = file('${stubLibrary.absolutePath}')
+                        }
+                    }
+                }
+            }
+        """
+
+        def project2BuildFile = new File(project2Folder, 'build.gradle')
+        project2BuildFile << """
+            $pluginInit
+
+            model {
+                components {
+                    bar(NativeExecutableSpec) {
+                        sources {
+                            cpp {
+                                source {
+                                    srcDir '.'
+                                    include 'main.cpp'
+                                }
+
+                                lib project: ':project1', library: 'foo2'
+                            }
+                        }
+                    }
+                }
+            }
+        """
+
+        File srcFile = new File(project2Folder, 'main.cpp')
+        srcFile.text = "int main() { return 0; }"
+
+        when:
+        def result = runBuild()
+        File fooLibrary = firstFile("${project1Folder}/build/libs/foo2/shared")
+        File optionsFile = new File(project2Folder, 'build/tmp/linkBarExecutable/options.txt')
+
+        then:
+        result.task(":project1:build").outcome == SUCCESS
+        result.task(":project2:build").outcome == SUCCESS
+        optionsFile.text.contains(fooLibrary.canonicalPath)
+        folderContents(project1Folder, 'build/libs/foo/shared').size() > 0
+        folderContents(project1Folder, 'build/libs/foo2/shared').size() > 0
+    }
 }
