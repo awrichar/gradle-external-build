@@ -4,7 +4,7 @@ apply plugin: 'com.gradle.plugin-publish'
 apply from: 'localPublish.gradle'
 
 group = 'com.cisco.gradle'
-version = '1.14'
+version = '1.15'
 
 ext {
     publishName = 'external-build'
