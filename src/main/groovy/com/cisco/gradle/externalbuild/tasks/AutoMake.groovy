@@ -7,7 +7,7 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.process.internal.ExecAction
 
 class AutoMake extends GnuMake {
-    @InputFile File configureExecutable = project.file('configure')
+    @Input Object configureExecutable = './configure'
     @Input List<Object> configureArgs = []
     @Input @Optional String crossCompileHost
     @OutputDirectory @Optional File installPrefix
@@ -54,7 +54,7 @@ class AutoMake extends GnuMake {
     }
 
     void configureExecutable(Object executable) {
-        configureExecutable = project.file(executable)
+        configureExecutable = executable
     }
 
     void configureArgs(Object... args) {

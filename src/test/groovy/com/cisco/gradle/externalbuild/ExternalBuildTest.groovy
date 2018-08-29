@@ -24,6 +24,7 @@ class ExternalBuildTest extends Specification {
         import com.cisco.gradle.externalbuild.ExternalNativeExecutableSpec
         import com.cisco.gradle.externalbuild.ExternalNativeLibrarySpec
         import com.cisco.gradle.externalbuild.ExternalNativeTestExecutableSpec
+        import com.cisco.gradle.externalbuild.tasks.AutoMake
         import com.cisco.gradle.externalbuild.tasks.CMake
         import com.cisco.gradle.externalbuild.tasks.GnuMake
         import com.cisco.gradle.externalbuild.tasks.QMake
@@ -198,6 +199,43 @@ class ExternalBuildTest extends Specification {
         then:
         result.task(":build").outcome == SUCCESS
         outputText('fooExecutable', 'qmake') == "qmake-arg-1 ${projectFile}"
+        outputText('fooExecutable', 'makeAll') == '-j 1 all'
+        folderContents(testProjectDir.root, 'build/exe/foo').size() > 0
+    }
+
+    def "basic automake"() {
+        given:
+        def installPrefix = testProjectDir.newFolder('install')
+        buildFile << """
+            $pluginInit
+
+            model {
+                components {
+                    foo(ExternalNativeExecutableSpec) {
+                        buildConfig(AutoMake) {
+                            executable 'echo'
+                            jobs 1
+                            targets 'all'
+                            configureExecutable 'echo'
+                            configureArgs 'configure-arg-1'
+                            crossCompileHost 'test-host'
+                            installPrefix '${installPrefix}'
+                        }
+
+                        buildOutput {
+                            outputFile = file('${stubExecutable.absolutePath}')
+                        }
+                    }
+                }
+            }
+        """
+
+        when:
+        def result = runBuild()
+
+        then:
+        result.task(":build").outcome == SUCCESS
+        outputText('fooExecutable', 'configure') == "--host=test-host --prefix=${installPrefix} configure-arg-1"
         outputText('fooExecutable', 'makeAll') == '-j 1 all'
         folderContents(testProjectDir.root, 'build/exe/foo').size() > 0
     }
