@@ -165,7 +165,7 @@ class ExternalBuildPlugin implements Plugin<Project> {
             File outputFile = build.outputFiles[binary]
 
             // Replace the normal create/link actions with a simple copy
-            task.deleteAllActions()
+            task.actions = []
             if (outputFile) {
                 task.source(outputFile)
                 task.doFirst {

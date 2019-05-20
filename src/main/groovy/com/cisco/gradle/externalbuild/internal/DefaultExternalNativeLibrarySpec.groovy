@@ -7,7 +7,6 @@ import com.cisco.gradle.externalbuild.context.BuildOutputContext
 import org.gradle.api.Action
 import org.gradle.api.GradleException
 import org.gradle.api.Task
-import org.gradle.api.internal.ClosureBackedAction
 import org.gradle.internal.Actions
 import org.gradle.nativeplatform.internal.DefaultNativeLibrarySpec
 
